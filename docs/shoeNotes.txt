@@ -1,0 +1,545 @@
+Posted by mkarasoff on Reddit on 1/11
+
+I'm not sure that published CLI documentation contains all the features of the HEOS. Multi-speaker configuration, naming, channel assignments all seem to be missing. Plus, what I would think is a "group" created in the HEOS app (a multichannel configuration for stereo or surround, created with using the app's CreateGroup command) doesn't even show up with the "Get Groups" command in the CLI. This makes me think that the CLI is either missing functionality or implements separate functionality, with terms like "group" overloaded.
+
+I've been experimenting with python scripts to replace the HEOS app using HTTP commands sniffed from the HEOS app and speakers. This adds functionality outside the CLI spec. To figure out what is going on, I've been sniffing traffic between two HEOS speakers and the HEOS app. The communications between the app and speakers are plain text, so it is fairly easy to figure out. Also, there are some helpful xml files that the speakers serve which basically provide a specification for plenty of commands that I don't see in either the HEOS app or the CLI docs. Lot's of interesting stuff.
+
+The communication between speakers seems tricker. It is binary. It looks like it occurs at two points: During configuration and during playback. In both cases, it is appears to be unicast. I'm not sure if the UDP becomes multicast in a setup more than two speakers.
+
+The App command for pairing speakers is "CreateZone" (no zone commands are in the CLI docs). The CreateZone command gets sent to a "master" speaker (I think this can be arbitrary) and it contains the list of the IPs of the other devices in that zone. After sending this command, there is a bunch of binary UDP traffic between the master speaker and the other member speaker in the zone. After that, the member speaker sends a plain text Notify event to the App with zone state information indicating it is part of the zone. I'll think this binary exchange between the speakers is part of the protocol you are looking for.
+
+As expected, there is also some communication between the speakers during playback. The server streams to the master via TCP, and then the master transmits to the member speakers via UDP. There is periodic TCP traffic between the two speakers. My guess is sync/heartbeat info, and maybe acking the UDP.
+
+If you are curious, I have a few PCAP files capturing the communication between the speakers during configuration and streaming. If you are interested, PM me and I can send them to you.
+
+Network Configuration can be done through web page: http://<Speaker IP>/settings/index.html
+Device Information (looks to be uPNP feature list): http://<Speaker IP>/ajax/upnp/get_device_info
+XML List of configuration WILL NEED THIS!: GET http://<Speaker IP>:60006/upnp/desc/aios_device/aios_device.xml
+Not sure I know what this is: GET http://<Speaker IP>:10234/nppl/nppl.xml .  It is an empty page,
+maybe not useful for HEOS speakers, but used on other devices?
+
+This is the control interface:  http://10.42.12.12:60006/ACT/control
+Lots of POST messages to port 60006, http://10.42.12.12:60006/ACT/control:
+
+##############HTTP HEADER <Request Control has Meaning> ##########################################
+<Speaker IP> IP address of speaker
+<Length> Length of payload in bytes
+<Request Control>  Command. Two seem important:
+
+Hypertext Transfer Protocol
+    POST /ACT/control HTTP/1.1\r\n
+    HOST: <Speaker IP>:60006\r\n
+    CONTENT-LENGTH: <Length>\r\n
+    Accept-Ranges: bytes\r\n
+    CONTENT-TYPE: text/xml; charset="utf-8"\r\n
+    SOAPACTION: "urn:schemas-denon-com:service:ACT:1<Request Control>"\r\n
+    USER-AGENT: LINUX UPnP/1.0 Denon-Heos/149200\r\n
+    \r\n
+
+###########Doing stuff##########################################
+Set Friendly Name for Individual Speaker:
+1. Get Config Token
+2. Set Name
+3. Apply Change
+3. Release Config Token
+
+Create Stereo Pair:
+1. Create Zone w/ two friendly names
+2. Get UUIDs of friendly names from Zone State
+3. Create a Group with friendly name UUIDs
+
+Change the Stereo Pair Name:
+1. Get Zone UUID of Zone from Zone State
+2. Set Zone Name
+
+Swap Left and Right Speakers
+1. Get Zone UUID of Zone from Zone State
+2. Set Audio Channel Right
+3. Set Audio Channel Left
+
+#########This gets a configuration token#################
+POST /ACT/control HTTP/1.1
+HOST: 10.42.12.12:60006
+CONTENT-LENGTH: 261
+Accept-Ranges: bytes
+CONTENT-TYPE: text/xml; charset="utf-8"
+SOAPACTION: "urn:schemas-denon-com:service:ACT:1#GetConfigurationToken"
+USER-AGENT: LINUX UPnP/1.0 Denon-Heos/149200
+
+
+This gets a configuration token: Post to
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:GetConfigurationToken xmlns:u="urn:schemas-denon-com:service:ACT:1">
+                </u:GetConfigurationToken>
+            </s:Body>
+        </s:Envelope>
+
+Here is the response:
+
+EXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:GetConfigurationTokenResponse xmlns:u="urn:schemas-denon-com:service:ACT:1">
+                <configurationToken>
+                    0000A65A37FEA2BE
+                    </configurationToken>
+                </u:GetConfigurationTokenResponse>
+            </s:Body>
+        </s:Envelope>
+
+#########This sets the friendly name#################
+POST /ACT/control HTTP/1.1
+HOST: 10.42.12.12:60006
+CONTENT-LENGTH: 352
+Accept-Ranges: bytes
+CONTENT-TYPE: text/xml; charset="utf-8"
+SOAPACTION: "urn:schemas-denon-com:service:ACT:1#SetFriendlyName"
+USER-AGENT: LINUX UPnP/1.0 Denon-Heos/149200
+
+
+eXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:SetFriendlyName xmlns:u="urn:schemas-denon-com:service:ACT:1">
+                <configurationToken>
+                    0000A65A37FEA2BE
+                    </configurationToken>
+                <friendlyName>
+                    Dining Room
+                    </friendlyName>
+                </u:SetFriendlyName>
+            </s:Body>
+        </s:Envelope>
+
+Here is the resonse
+
+eXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:SetFriendlyNameResponse xmlns:u="urn:schemas-denon-com:service:ACT:1">
+                </u:SetFriendlyNameResponse>
+            </s:Body>
+        </s:Envelope>
+
+#########This applies the change#################
+POST /ACT/control HTTP/1.1
+HOST: 10.42.12.12:60006
+CONTENT-LENGTH: 304
+Accept-Ranges: bytes
+CONTENT-TYPE: text/xml; charset="utf-8"
+SOAPACTION: "urn:schemas-denon-com:service:ACT:1#ApplyChanges"
+USER-AGENT: LINUX UPnP/1.0 Denon-Heos/149200
+
+
+eXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:ApplyChanges xmlns:u="urn:schemas-denon-com:service:ACT:1">
+                <configurationToken>
+                    0000A65A37FEA2BE
+                    </configurationToken>
+                </u:ApplyChanges>
+            </s:Body>
+        </s:Envelope>
+
+####################This releases the token###############################
+POST /ACT/control HTTP/1.1
+HOST: 10.42.12.12:60006
+CONTENT-LENGTH: 330
+Accept-Ranges: bytes
+CONTENT-TYPE: text/xml; charset="utf-8"
+SOAPACTION: "urn:schemas-denon-com:service:ACT:1#ReleaseConfigurationToken"
+USER-AGENT: LINUX UPnP/1.0 Denon-Heos/149200
+
+eXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:ReleaseConfigurationToken xmlns:u="urn:schemas-denon-com:service:ACT:1">
+                <configurationToken>
+                    000102B54D7C206D
+                    </configurationToken>
+                </u:ReleaseConfigurationToken>
+            </s:Body>
+        </s:Envelope>
+
+########################This gets Zone UUIDs state#################
+
+Hypertext Transfer Protocol
+    POST /upnp/control/AiosServicesDvc/ZoneControl HTTP/1.1\r\n
+    HOST: 10.42.12.12:60006\r\n
+    CONTENT-LENGTH: 257\r\n
+    Accept-Ranges: bytes\r\n
+    CONTENT-TYPE: text/xml; charset="utf-8"\r\n
+    SOAPACTION: "urn:schemas-denon-com:service:ZoneControl:2#GetCurrentState"\r\n
+    USER-AGENT: LINUX UPnP/1.0 Denon-Heos/149200\r\n
+    \r\n
+    [Full request URI: http://10.42.12.12:60006/upnp/control/AiosServicesDvc/ZoneControl]
+    [HTTP request 1/1]
+    [Response in frame: 1362]
+    File Data: 257 bytes
+eXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:GetCurrentState
+                xmlns:u="urn:schemas-denon-com:service:ZoneControl:2">
+                </u:GetCurrentState>
+            </s:Body>
+        </s:Envelope>
+
+RESPONSE:
+eXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:GetCurrentStateResponse xmlns:u="urn:schemas-denon-com:service:ZoneControl:2">
+                <CurrentState>&lt;Event xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/ZCS/&quot;&gt;&lt;ZoneConnectedList val=&quot;caf7916a94db1a1300800005cdfbb9c6,f3ddb59f3e691f1e00800005cdff1706&quot;/&gt;&lt;ZoneFriendlyName val=&quot;Family Room&quot;/&gt;&lt;ZoneMemberList val=&quot;caf7916a94db1a1300800005cdfbb9c6,f3ddb59f3e691f1e00800005cdff1706&quot;/&gt;&lt;ZoneMemberStatusList val=&quot;caf7916a94db1a1300800005cdfbb9c6,ZONE_LEAD,f3ddb59f3e691f1e00800005cdff1706,ZONE_SLAVE&quot;/&gt;&lt;ZoneMute val=&quot;0&quot;/&gt;&lt;ZoneStatus val=&quot;ZONE_LEAD&quot;/&gt;&lt;ZoneVolume val=&quot;31&quot;/&gt;&lt;ZoneMinimise val=&quot;0&quot;/&gt;&lt;ZoneUUID val=&quot;17083c46d003001000800005cdfbb9c6&quot;/&gt;&lt;/Event&gt;</CurrentState>
+                </u:GetCurrentStateResponse>
+            </s:Body>
+        </s:Envelope>
+
+Note:  The
+
+####################This Creates a Zone###############################
+Hypertext Transfer Protocol
+    POST /upnp/control/AiosServicesDvc/ZoneControl HTTP/1.1\r\n
+    HOST: 10.42.12.12:60006\r\n
+    CONTENT-LENGTH: 347\r\n
+    Accept-Ranges: bytes\r\n
+    CONTENT-TYPE: text/xml; charset="utf-8"\r\n
+    SOAPACTION: "urn:schemas-denon-com:service:ZoneControl:2#CreateZone"\r\n
+    USER-AGENT: LINUX UPnP/1.0 Denon-Heos/149200\r\n
+    \r\n
+    [Full request URI: http://10.42.12.12:60006/upnp/control/AiosServicesDvc/ZoneControl]
+    [HTTP request 1/1]
+    [Response in frame: 7]
+    File Data: 347 bytes
+
+eXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:CreateZone xmlns:u="urn:schemas-denon-com:service:ZoneControl:2">
+                <ZoneFriendlyName>
+                    Kitchen + Dining Room
+                    </ZoneFriendlyName>
+                <ZoneIPList>
+                    10.42.12.11
+                    </ZoneIPList>
+                </u:CreateZone>
+            </s:Body>
+        </s:Envelope>
+
+The Return:
+eXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:CreateZoneResponse xmlns:u="urn:schemas-denon-com:service:ZoneControl:2">
+                <ZoneUUID>
+                    17083c46d003001000800005cdfbb9c6
+                    </ZoneUUID>
+                </u:CreateZoneResponse>
+            </s:Body>
+        </s:Envelope>
+
+#############################Change The Name of Zone####################################
+Hypertext Transfer Protocol
+    POST /upnp/control/AiosServicesDvc/ZoneControl HTTP/1.1\r\n
+    HOST: 10.42.12.12:60006\r\n
+    CONTENT-LENGTH: 372\r\n
+    Accept-Ranges: bytes\r\n
+    CONTENT-TYPE: text/xml; charset="utf-8"\r\n
+    SOAPACTION: "urn:schemas-denon-com:service:ZoneControl:2#SetZoneFriendlyName"\r\n
+    USER-AGENT: LINUX UPnP/1.0 Denon-Heos/149200\r\n
+    \r\n
+    [Full request URI: http://10.42.12.12:60006/upnp/control/AiosServicesDvc/ZoneControl]
+    [HTTP request 1/1]
+    [Response in frame: 83]
+    File Data: 372 bytes
+eXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:SetZoneFriendlyName xmlns:u="urn:schemas-denon-com:service:ZoneControl:2">
+                <ZoneUUID>
+                    17083c46d003001000800005cdfbb9c6
+                    </ZoneUUID>
+                <ZoneFriendlyName>
+                    Family Room
+                    </ZoneFriendlyName>
+                </u:SetZoneFriendlyName>
+            </s:Body>
+        </s:Envelope>
+
+Return:
+eXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:SetZoneFriendlyNameResponse xmlns:u="urn:schemas-denon-com:service:ZoneControl:2">
+                </u:SetZoneFriendlyNameResponse>
+            </s:Body>
+        </s:Envelope>
+
+############################Creating A Group - Makes a Stereo Pair #####################################################
+Hypertext Transfer Protocol
+    POST /upnp/control/AiosServicesDvc/GroupControl HTTP/1.1\r\n
+    HOST: 10.42.12.12:60006\r\n
+    CONTENT-LENGTH: 465\r\n
+    Accept-Ranges: bytes\r\n
+    CONTENT-TYPE: text/xml; charset="utf-8"\r\n
+    SOAPACTION: "urn:schemas-denon-com:service:GroupControl:1#CreateGroup"\r\n
+    USER-AGENT: LINUX UPnP/1.0 Denon-Heos/149200\r\n
+    \r\n
+    [Full request URI: http://10.42.12.12:60006/upnp/control/AiosServicesDvc/GroupControl]
+    [HTTP request 1/1]
+    [Response in frame: 33]
+    File Data: 465 bytes
+eXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:CreateGroup xmlns:u="urn:schemas-denon-com:service:GroupControl:1">
+                <GroupFriendlyName>
+                    Family Room
+                    </GroupFriendlyName>
+                <GroupMemberUUIDList>
+                    caf7916a94db1a1300800005cdfbb9c6,f3ddb59f3e691f1e00800005cdff1706
+                    </GroupMemberUUIDList>
+                <GroupMemberChannelList>
+                    </GroupMemberChannelList>
+                </u:CreateGroup>
+            </s:Body>
+        </s:Envelope>
+
+The Group Member lists UUIDs can be gotten from "ZoneControl" GetCurrentState
+
+eXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:CreateGroupResponse xmlns:u="urn:schemas-denon-com:service:GroupControl:1">
+                <GroupUUID>
+                    17083c46d003001000800005cdfbb9c6
+                    </GroupUUID>
+                </u:CreateGroupResponse>
+            </s:Body>
+        </s:Envelope>
+
+################################AudioChannel This Swaps Left and Right####################################################
+Need to send this command twice:
+Set <AudioChannel>=Right then follow with <AudioChannel>=Left
+To go back to default:
+Set <AudioChannel>=Left then follow with <AudioChannel>=Right (default)
+
+Hypertext Transfer Protocol
+    POST /upnp/control/AiosServicesDvc/GroupControl HTTP/1.1\r\n
+    HOST: 10.42.12.12:60006\r\n
+    CONTENT-LENGTH: 364\r\n
+    Accept-Ranges: bytes\r\n
+    CONTENT-TYPE: text/xml; charset="utf-8"\r\n
+    SOAPACTION: "urn:schemas-denon-com:service:GroupControl:1#SetGroupMemberChannel"\r\n
+    USER-AGENT: LINUX UPnP/1.0 Denon-Heos/149200\r\n
+    \r\n
+    [Full request URI: http://10.42.12.12:60006/upnp/control/AiosServicesDvc/GroupControl]
+    [HTTP request 1/1]
+    [Response in frame: 676]
+    File Data: 364 bytes
+eXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:SetGroupMemberChannel xmlns:u="urn:schemas-denon-com:service:GroupControl:1">
+                <GroupUUID>
+                    17083c46d003001000800005cdfbb9c6
+                    </GroupUUID>
+                <AudioChannel>
+                    LEFT
+                    </AudioChannel>
+                </u:SetGroupMemberChannel>
+            </s:Body>
+        </s:Envelope>
+
+eXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:SetGroupMemberChannelResponse xmlns:u="urn:schemas-denon-com:service:GroupControl:1">
+                </u:SetGroupMemberChannelResponse>
+            </s:Body>
+        </s:Envelope>
+
+#############################################################################################################
+Other random posts messages to port 60006:
+
+eXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:Browse
+                xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">
+                <ObjectID>
+                    0
+                    </ObjectID>
+                <BrowseFlag>
+                    BrowseDirectChildren
+                    </BrowseFlag>
+                <Filter>
+                    dc:title,dc:date,upnp:artist,dc:creator,upnp:class,upnp:album,upnp:genre,upnp:albumArtURI,res,res@duration,res@reliability,upnp:originalTrackNumber,avega_media_server:media_library_database,container@searchable
+                    </Filter>
+                <StartingIndex>
+                    0
+                    </StartingIndex>
+                <RequestedCount>
+                    0
+                    </RequestedCount>
+                <SortCriteria>
+                    </SortCriteria>
+                </u:Browse>
+            </s:Body>
+        </s:Envelope>
+
+eXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:GetNetworkConfigurationList
+                xmlns:u="urn:schemas-denon-com:service:ACT:1">
+                </u:GetNetworkConfigurationList>
+            </s:Body>
+        </s:Envelope>
+
+eXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:GetUpgradeStatus
+                xmlns:u="urn:schemas-denon-com:service:ACT:1">
+                </u:GetUpgradeStatus>
+            </s:Body>
+        </s:Envelope>
+
+eXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:SetFriendlyName
+                xmlns:u="urn:schemas-denon-com:service:ACT:1">
+                <configurationToken>
+                    0000A65A37FEA2BE
+                    </configurationToken>
+                <friendlyName>
+                    Dining Room
+                    </friendlyName>
+                </u:SetFriendlyName>
+            </s:Body>
+        </s:Envelope>
+
+########################Zone Volume Control###############################
+Hypertext Transfer Protocol
+    POST /upnp/control/AiosServicesDvc/ZoneControl HTTP/1.1\r\n
+    HOST: 10.42.12.12:60006\r\n
+    CONTENT-LENGTH: 339\r\n
+    Accept-Ranges: bytes\r\n
+    CONTENT-TYPE: text/xml; charset="utf-8"\r\n
+    SOAPACTION: "urn:schemas-denon-com:service:ZoneControl:2#SetZoneVolume"\r\n
+    USER-AGENT: LINUX UPnP/1.0 Denon-Heos/149200\r\n
+    \r\n
+    [Full request URI: http://10.42.12.12:60006/upnp/control/AiosServicesDvc/ZoneControl]
+    [HTTP request 1/1]
+    [Response in frame: 31]
+    File Data: 339 bytes
+eXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:SetZoneVolume
+                xmlns:u="urn:schemas-denon-com:service:ZoneControl:2">
+                <ZoneUUID>
+                    17083c46d003001000800005cdfbb9c6
+                    </ZoneUUID>
+                <ZoneVolume>
+                    25
+                    </ZoneVolume>
+                </u:SetZoneVolume>
+            </s:Body>
+        </s:Envelope>
+
+eXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:SetZoneVolumeResponse
+                xmlns:u="urn:schemas-denon-com:service:ZoneControl:2">
+                </u:SetZoneVolumeResponse>
+            </s:Body>
+        </s:Envelope>
+
+#############This dumps speaker Not sure its useful#################
+Hypertext Transfer Protocol
+    POST /ACT/control HTTP/1.1\r\n
+    HOST: 10.42.12.12:60006\r\n
+    CONTENT-LENGTH: 249\r\n
+    Accept-Ranges: bytes\r\n
+    CONTENT-TYPE: text/xml; charset="utf-8"\r\n
+    SOAPACTION: "urn:schemas-denon-com:service:ACT:1#GetCurrentState"\r\n
+    USER-AGENT: LINUX UPnP/1.0 Denon-Heos/149200\r\n
+    \r\n
+    [Full request URI: http://10.42.12.12:60006/ACT/control]
+    [HTTP request 1/1]
+    [Response in frame: 1410]
+    File Data: 249 bytes
+eXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:GetCurrentState
+                xmlns:u="urn:schemas-denon-com:service:ACT:1">
+                </u:GetCurrentState>
+            </s:Body>
+        </s:Envelope>
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:GetCurrentState xmlns:u="urn:schemas-denon-com:service:ACT:1"></u:GetCurrentState></s:Body></s:Envelope>
+
+eXtensible Markup Language
+    <s:Envelope
+        xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <u:GetCurrentStateResponse
+                xmlns:u="urn:schemas-denon-com:service:ACT:1">
+                <CurrentState>&lt;Event xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/ACT/&quot;&gt;&lt;ActiveInterface val=&quot;1&quot;/&gt;&lt;FriendlyName val=&quot;Kitchen&quot;/&gt;&lt;HEOSNetId val=&quot;DEFAULT-SSID-8e09dfb09df4FBfa996&quot;/&gt;&lt;LastDiscoveredDevice val=&quot;&quot;/&gt;&lt;P2PMode val=&quot;NONE&quot;/&gt;&lt;Transcode val=&quot;1&quot;/&gt;&lt;AudioConfig val=&quot;&amp;lt;AudioConfig&amp;gt;&amp;lt;highpass&amp;gt;0&amp;lt;/highpass&amp;gt;&amp;lt;lowpass&amp;gt;80&amp;lt;/lowpass&amp;gt;&amp;lt;subwooferEnable&amp;gt;0&amp;lt;/subwooferEnable&amp;gt;&amp;lt;outputMode&amp;gt;STEREO&amp;lt;/outputMode&amp;gt;&amp;lt;ampBridged&amp;gt;0&amp;lt;/ampBridged&amp;gt;&amp;lt;soundMode&amp;gt;STEREO&amp;lt;/soundMode&amp;gt;&amp;lt;impedance&amp;gt;&amp;lt;/impedance&amp;gt;&amp;lt;ampPower&amp;gt;1&amp;lt;/ampPower&amp;gt;&amp;lt;availableSoundModes&amp;gt;MOVIE_NORMAL,MUSIC_NORMAL&amp;lt;/availableSoundModes&amp;gt;&amp;lt;sourceDirect&amp;gt;0&amp;lt;/sourceDirect&amp;gt;&amp;lt;bassBoost&amp;gt;0&amp;lt;/bassBoost&amp;gt;&amp;lt;speakerOption&amp;gt;&amp;lt;/speakerOption&amp;gt;&amp;lt;/AudioConfig&amp;gt;&quot;/&gt;&lt;BTConfig val=&quot;&amp;lt;BluetoothStatus&amp;gt;&amp;lt;connectedStatus&amp;gt;DISCONNECTED&amp;lt;/connectedStatus&amp;gt;&amp;lt;connectedDevice&amp;gt;&amp;lt;/connectedDevice&amp;gt;&amp;lt;pairedDevices&amp;gt;&amp;lt;/pairedDevices&amp;gt;&amp;lt;hasPairedDevices&amp;gt;0&amp;lt;/hasPairedDevices&amp;gt;&amp;lt;/BluetoothStatus&amp;gt;&quot;/&gt;&lt;ConfigurationStatus val=&quot;0&quot;/&gt;&lt;UpgradeComponentInstallProgress val=&quot;0&quot;/&gt;&lt;CurrentLanguageLocale val=&quot;en_US&quot;/&gt;&lt;CurrentWirelessProfile val=&quot;&amp;lt;wirelessProfile SSID=&amp;quot;DEFAULT-SSID-8e09dfb09df4FBfa996&amp;quot;&amp;gt;&amp;lt;wirelessSecurity enabled=&amp;quot;true&amp;quot;&amp;gt;&amp;lt;Mode passPhrase=&amp;quot;DEFAULT-PWD-c4E10186eDA2cbfAEB73454E52C09eDFCBEAC50a2fde2460Dd41&amp;quot;&amp;gt;WPA2-AES&amp;lt;/Mode&amp;gt;&amp;lt;/wirelessSecurity&amp;gt;&amp;lt;/wirelessProfile&amp;gt;&quot;/&gt;&lt;DaylightSaving val=&quot;0&quot;/&gt;&lt;IANAName val=&quot;&quot;/&gt;&lt;LEDConfig val=&quot;&amp;lt;LEDConfig&amp;gt;&amp;lt;led&amp;gt;&amp;lt;name&amp;gt;MODE&amp;lt;/name&amp;gt;&amp;lt;brightness&amp;gt;100&amp;lt;/brightness&amp;gt;&amp;lt;/led&amp;gt;&amp;lt;led&amp;gt;&amp;lt;name&amp;gt;NETWORK&amp;lt;/name&amp;gt;&amp;lt;brightness&amp;gt;100&amp;lt;/brightness&amp;gt;&amp;lt;/led&amp;gt;&amp;lt;led&amp;gt;&amp;lt;name&amp;gt;MUTED&amp;lt;/name&amp;gt;&amp;lt;brightness&amp;gt;100&amp;lt;/brightness&amp;gt;&amp;lt;/led&amp;gt;&amp;lt;led&amp;gt;&amp;lt;name&amp;gt;REAR_STATUS&amp;lt;/name&amp;gt;&amp;lt;brightness&amp;gt;100&amp;lt;/brightness&amp;gt;&amp;lt;/led&amp;gt;&amp;lt;/LEDConfig&amp;gt;&quot;/&gt;&lt;NetworkConfigurationList val=&quot;&amp;lt;listNetworkConfigurations&amp;gt;&amp;lt;networkConfiguration id=&amp;quot;1&amp;quot; dhcpOn=&amp;quot;0&amp;quot; enabled=&amp;quot;true&amp;quot;&amp;gt;&amp;lt;Name&amp;gt;eth0&amp;lt;/Name&amp;gt;&amp;lt;Type&amp;gt;LAN&amp;lt;/Type&amp;gt;&amp;lt;IP&amp;gt;10.42.12.12&amp;lt;/IP&amp;gt;&amp;lt;Netmask&amp;gt;255.255.255.0&amp;lt;/Netmask&amp;gt;&amp;lt;Gateway&amp;gt;10.42.12.1&amp;lt;/Gateway&amp;gt;&amp;lt;DNS1&amp;gt;10.42.12.1&amp;lt;/DNS1&amp;gt;&amp;lt;DNS2&amp;gt;0.0.0.0&amp;lt;/DNS2&amp;gt;&amp;lt;DNS3&amp;gt;0.0.0.0&amp;lt;/DNS3&amp;gt;&amp;lt;gwMac&amp;gt;000000000000&amp;lt;/gwMac&amp;gt;&amp;lt;/networkConfiguration&amp;gt;&amp;lt;networkConfiguration id=&amp;quot;2&amp;quot; dhcpOn=&amp;quot;1&amp;quot; enabled=&amp;quot;true&amp;quot;&amp;gt;&amp;lt;Name&amp;gt;wlan0&amp;lt;/Name&amp;gt;&amp;lt;Type&amp;gt;WLAN&amp;lt;/Type&amp;gt;&amp;lt;IP&amp;gt;0.0.0.0&amp;lt;/IP&amp;gt;&amp;lt;Netmask&amp;gt;0.0.0.0&amp;lt;/Netmask&amp;gt;&amp;lt;Gateway&amp;gt;0.0.0.0&amp;lt;/Gateway&amp;gt;&amp;lt;DNS1&amp;gt;0.0.0.0&amp;lt;/DNS1&amp;gt;&amp;lt;DNS2&amp;gt;0.0.0.0&amp;lt;/DNS2&amp;gt;&amp;lt;DNS3&amp;gt;0.0.0.0&amp;lt;/DNS3&amp;gt;&amp;lt;gwMac&amp;gt;&amp;lt;/gwMac&amp;gt;&amp;lt;wirelessProfile SSID=&amp;quot;DEFAULT-SSID-8e09dfb09df4FBfa996&amp;quot;&amp;gt;&amp;lt;wirelessSecurity enabled=&amp;quot;true&amp;quot;&amp;gt;&amp;lt;Mode passPhrase=&amp;quot;DEFAULT-PWD-c4E10186eDA2cbfAEB73454E52C09eDFCBEAC50a2fde2460Dd41&amp;quot;&amp;gt;WPA2-AES&amp;lt;/Mode&amp;gt;&amp;lt;/wirelessSecurity&amp;gt;&amp;lt;/wirelessProfile&amp;gt;&amp;lt;/networkConfiguration&amp;gt;&amp;lt;/listNetworkConfigurations&amp;gt;&quot;/&gt;&lt;NetworkShareConfig val=&quot;&amp;lt;NetworkShareConfig&amp;gt;&amp;lt;/NetworkShareConfig&amp;gt;&quot;/&gt;&lt;SessionId val=&quot;&quot;/&gt;&lt;SurroundSpeakerConfig val=&quot;&amp;lt;SurroundSpeakerConfig&amp;gt;&amp;lt;Front&amp;gt;&amp;lt;enabled&amp;gt;1&amp;lt;/enabled&amp;gt;&amp;lt;crossover&amp;gt;0&amp;lt;/crossover&amp;gt;&amp;lt;Right&amp;gt;&amp;lt;distance&amp;gt;12&amp;lt;/distance&amp;gt;&amp;lt;level&amp;gt;12&amp;lt;/level&amp;gt;&amp;lt;test_tone&amp;gt;0&amp;lt;/test_tone&amp;gt;&amp;lt;/Right&amp;gt;&amp;lt;Left&amp;gt;&amp;lt;distance&amp;gt;12&amp;lt;/distance&amp;gt;&amp;lt;level&amp;gt;12&amp;lt;/level&amp;gt;&amp;lt;test_tone&amp;gt;0&amp;lt;/test_tone&amp;gt;&amp;lt;/Left&amp;gt;&amp;lt;/Front&amp;gt;&amp;lt;Center&amp;gt;&amp;lt;enabled&amp;gt;0&amp;lt;/enabled&amp;gt;&amp;lt;crossover&amp;gt;0&amp;lt;/crossover&amp;gt;&amp;lt;Center&amp;gt;&amp;lt;distance&amp;gt;12&amp;lt;/distance&amp;gt;&amp;lt;level&amp;gt;12&amp;lt;/level&amp;gt;&amp;lt;test_tone&amp;gt;0&amp;lt;/test_tone&amp;gt;&amp;lt;/Center&amp;gt;&amp;lt;/Center&amp;gt;&amp;lt;Subwoofer&amp;gt;&amp;lt;enabled&amp;gt;0&amp;lt;/enabled&amp;gt;&amp;lt;lowpass&amp;gt;250&amp;lt;/lowpass&amp;gt;&amp;lt;phase&amp;gt;0&amp;lt;/phase&amp;gt;&amp;lt;Subwoofer&amp;gt;&amp;lt;distance&amp;gt;12&amp;lt;/distance&amp;gt;&amp;lt;level&amp;gt;12&amp;lt;/level&amp;gt;&amp;lt;test_tone&amp;gt;0&amp;lt;/test_tone&amp;gt;&amp;lt;/Subwoofer&amp;gt;&amp;lt;/Subwoofer&amp;gt;&amp;lt;Rear&amp;gt;&amp;lt;enabled&amp;gt;0&amp;lt;/enabled&amp;gt;&amp;lt;crossover&amp;gt;0&amp;lt;/crossover&amp;gt;&amp;lt;surround_mode&amp;gt;OFF&amp;lt;/surround_mode&amp;gt;&amp;lt;Right&amp;gt;&amp;lt;distance&amp;gt;10&amp;lt;/distance&amp;gt;&amp;lt;level&amp;gt;12&amp;lt;/level&amp;gt;&amp;lt;test_tone&amp;gt;0&amp;lt;/test_tone&amp;gt;&amp;lt;/Right&amp;gt;&amp;lt;Left&amp;gt;&amp;lt;distance&amp;gt;10&amp;lt;/distance&amp;gt;&amp;lt;level&amp;gt;12&amp;lt;/level&amp;gt;&amp;lt;test_tone&amp;gt;0&amp;lt;/test_tone&amp;gt;&amp;lt;/Left&amp;gt;&amp;lt;/Rear&amp;gt;&amp;lt;DistUnit&amp;gt;m&amp;lt;/DistUnit&amp;gt;&amp;lt;/SurroundSpeakerConfig&amp;gt;&quot;/&gt;&lt;TimeZone val=&quot;(GMT-8:00)&quot;/&gt;&lt;UpdateAction val=&quot;UPDATE_ACTION_NONE&quot;/&gt;&lt;UpdateLevel val=&quot;0&quot;/&gt;&lt;UpgradeProgress val=&quot;0&quot;/&gt;&lt;UpgradeStatus val=&quot;UPGRADE_CURRENT&quot;/&gt;&lt;VolumeLimit val=&quot;100&quot;/&gt;&lt;WifiApSsid val=&quot;&quot;/&gt;&lt;WirelessState val=&quot;LINK_DOWN&quot;/&gt;&lt;/Event&gt;</CurrentState>
+                </u:GetCurrentStateResponse>
+            </s:Body>
+        </s:Envelope>
