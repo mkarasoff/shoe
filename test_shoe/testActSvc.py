@@ -23,85 +23,61 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ############################################################################
-from .shoeTestXml import *
+from .testShoeSvc import *
+from .testShoeEvent import *
+from .testActDev import *
 from collections import OrderedDict
 
-class TestActSvc(ShoeTestXml):
-    def __init__(self):
-        xmlFile='SCPD.xml'
-        md5hex='ff2c1a651e8c18e28ae77a2fe2632994'
-        self.urlPath='/ACT/'
-        self.urn='urn:schemas-denon-com:service:ACT:1'
-
-        self.url='%s%s' % (self.urlPath, xmlFile)
-        self.name='ACT'
-        self.devName='ACT-Denon'
-
-        super(TestActSvc, self).__init__(xmlFile, md5hex)
-################################################################################
-        self.getCurrStCmnd='GetCurrentState'
-
-        self.getCurrStArg= [\
-                            {'relatedStateVariable': 'LastChange', 'direction': 'out', 'name': 'CurrentState',\
-                             'state' : {'dataType': 'string', '@sendEvents': 'yes', 'name': 'LastChange'}},]
-
-        self.getCurrStHdr={'HOST': '127.0.0.1:60006', \
-                            'CONTENT-LENGTH': '239', \
-                            'Accept-Ranges': 'bytes', \
-                            'CONTENT-TYPE': 'text/xml; charset="utf-8"', \
-                            'SOAPACTION': '"urn:schemas-denon-com:service:ACT:1#GetCurrentState"', \
-                            'USER-AGENT': 'LINUX UPnP/1.0 Denon-Heos/149200'}
-
-        self.getCurrStCmndXml= '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" '\
-                                    's:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">'\
-                                    '<s:Body>'\
-                                    '<u:GetCurrentState xmlns:u="urn:schemas-denon-com:service:ACT:1">'\
-                                    '</u:GetCurrentState>'\
-                                    '</s:Body>'\
-                                    '</s:Envelope>'
-
-        self.getCurrStRtnXml='<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" '\
-                's:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">'\
-                '<s:Body>'\
-                    '<u:GetCurrentStateResponse '\
-                        'xmlns:u="urn:schemas-denon-com:service:ACT:1">'\
-                        '<CurrentState>%s</CurrentState></u:GetCurrentStateResponse>'\
-                    '</s:Body>'\
-                '</s:Envelope>' % self.getCurrStRtnBody
-
-#<Event xmlns="urn:schemas-upnp-org:metadata-1-0/ACT/"><ActiveInterface val="1"/><FriendlyName val="Kitchen"/></Event>
+class TestActSvc(TestShoeSvc):
+    def __init__(self, devName, svcCfg):
+        super().__init__(  xmlFile='SCPD.xml',
+                        md5hex='ff2c1a651e8c18e28ae77a2fe2632994',
+                        devName=devName,
+                        svcCfg=svcCfg)
 
 ################################################################################
-        self.getAccPtListCmnd='GetAccessPointList'
+        cmnd=TestShoeEvent('GetCurrentState', self.urn, self.cmndPath)
 
-        self.getAccPtListArgs= [\
-                            {'relatedStateVariable': 'ARG_ConfigurationToken', 'direction': 'in', 'name': 'configurationToken',\
-                             'state' : {'dataType': 'string', '@sendEvents': 'no', 'name': 'ARG_ConfigurationToken'}},\
-                            {'relatedStateVariable': 'ARG_AccessPointList', 'direction': 'out', 'name': 'accessPointList',\
-                             'state' : {'dataType': 'string', '@sendEvents': 'no', 'name': 'ARG_AccessPointList'}},]
+        cmnd.argsCfg= [\
+                      {'relatedStateVariable': 'LastChange', 'direction': 'out', 'name': 'CurrentState',\
+                       'state' : {'dataType': 'string', '@sendEvents': 'yes', 'name': 'LastChange'}},]
 
-        getAccPtListRtnBody = '<u:GetAccessPointListResponse  xmlns:u="urn:schemas-denon-com:service:ACT:1">'\
-                               '<accessPointList>wapname</accessPointList></u:GetAccessPointListResponse>'
-        self.getAccPtListRtnXml='%s%s%s' % (self.xmlRtnHead, getAccPtListRtnBody, self.xmlRtnTail)
+        cmnd.rtnMsgBody=self.getCurrStRtnMsgBody
+        cmnd.fmtOutput=self.getCurrStFmtOutput
 
-        self.accPtListRtn=OrderedDict([('accessPointList', 'wapname'),])
+        cmnd.rtn=self.getCurrStRtn
+
+        self.cmnds[cmnd.name]=cmnd
 
 ################################################################################
-        self.getCfgTokenCmd='GetConfigurationToken'
-        self.getCfgTokenArgs= [\
+        cmnd = TestShoeCmnd('GetAccessPointList', self.urn, self.cmndPath)
+
+        cmnd.argsCfg = [\
+                         {'relatedStateVariable': 'ARG_ConfigurationToken', 'direction': 'in', 'name': 'configurationToken',\
+                          'state' : {'dataType': 'string', '@sendEvents': 'no', 'name': 'ARG_ConfigurationToken'}},\
+                         {'relatedStateVariable': 'ARG_AccessPointList', 'direction': 'out', 'name': 'accessPointList',\
+                          'state' : {'dataType': 'string', '@sendEvents': 'no', 'name': 'ARG_AccessPointList'}},]
+
+        cmnd.args=OrderedDict([('configurationToken', '1234567890'),])
+        cmnd.rtn = OrderedDict([('accessPointList', 'wapname'),])
+
+        self.cmnds[cmnd.name]=cmnd
+
+################################################################################
+        cmnd = TestShoeCmnd('GetConfigurationToken', self.urn, self.cmndPath)
+
+        cmnd.argsCfg= [\
                         {'relatedStateVariable': 'ARG_ConfigurationToken', 'direction': 'out', 'name': 'configurationToken',\
                         'state' : {'dataType': 'string', '@sendEvents': 'no', 'name': 'ARG_ConfigurationToken'}},]
 
-        getCfgTokenRtnBody = '<u:GetConfigurationTokenResponse  xmlns:u="urn:schemas-denon-com:service:ACT:1">'\
-                               '<configurationToken>caf7916a94db1</configurationToken></u:GetConfigurationTokenResponse>'
-        self.getCfgTokenRtnXml = '%s%s%s' % (self.xmlRtnHead, getCfgTokenRtnBody, self.xmlRtnTail)
+        cmnd.rtn=OrderedDict([('configurationToken', 'caf7916a94db1'),])
 
-        self.getCfgTokenRtn=OrderedDict([('configurationToken', 'caf7916a94db1'),])
+        self.cmnds[cmnd.name]=cmnd
 
 ################################################################################
-        self.setUpdateActCmnd='SetUpdateAction'
+        cmnd = TestShoeCmnd('SetUpdateAction', self.urn, self.cmndPath)
 
-        self.setUpdateActArgs=[\
+        cmnd.argsCfg=[\
                     {'relatedStateVariable': 'UpdateAction', 'direction': 'in', 'name': 'UpdateAction',\
                     'state' : {'dataType': 'string',\
                                 'defaultValue': 'UPDATE_ACTION_NONE',\
@@ -113,16 +89,14 @@ class TestActSvc(ShoeTestXml):
                                     'UPDATE_ACTION_REMIND',\
                                     'UPDATE_ACTION_SKIP']}}},]
 
-        setUpdateActRtnBody = '<u:SetUpdateActionResponse  xmlns:u="urn:schemas-denon-com:service:ACT:1">'\
-                               '</u:SetUpdateActionResponse>'
-        self.setUpdateActRtnXml ='%s%s%s' % (self.xmlRtnHead, setUpdateActRtnBody, self.xmlRtnTail)
+        cmnd.args=OrderedDict([('UpdateAction', 'UPDATE_ACTION_NONE'),])
 
-        self.setUpdateActRtn=OrderedDict()
+        self.cmnds[cmnd.name]=cmnd
 
 ################################################################################
-        self.getNetCfgCmd='GetNetworkConfiguration'
+        cmnd = TestShoeCmnd('GetNetworkConfiguration', self.urn, self.cmndPath)
 
-        self.getNetCfgArgs=[\
+        cmnd.argsCfg=[\
                 {'relatedStateVariable': 'ARG_NetworkConfigurationID', 'direction': 'in', 'name': 'networkConfigurationId',\
                 'state': {'dataType': 'ui1', 'defaultValue': '1', \
                             'allowedValueRange': {'step': '1', 'minimum': '1', 'maximum': '255'},\
@@ -130,14 +104,15 @@ class TestActSvc(ShoeTestXml):
                 {'relatedStateVariable': 'ARG_NetworkConfiguration', 'direction': 'out', 'name': 'networkConfiguration',\
                     'state': {'dataType': 'string', '@sendEvents': 'no', 'name': 'ARG_NetworkConfiguration'}}]
 
-        getNetCfgRtnBody = '<u:GetNetworkConfigurationResponse  xmlns:u="urn:schemas-denon-com:service:ACT:1">'\
-                               '<networkConfiguration>1</networkConfiguration></u:GetNetworkConfigurationResponse>'
-        self.getNetCfgRtnXml ='%s%s%s' % (self.xmlRtnHead, getNetCfgRtnBody, self.xmlRtnTail)
-
-        self.getNetCfgRtn=OrderedDict([('networkConfiguration', '1'),])
+        cmnd.args=OrderedDict([('networkConfiguration', '1'),])
+        cmnd.rtn=OrderedDict([('networkConfiguration', '1'),])
+        self.cmnds[cmnd.name]=cmnd
 
 ################################################################################
-        self._cmndTbl={\
+    @property
+    def cmndTbl(self):
+
+        cmndTbl={\
             'SetConfigurationStatus': [\
                 {'relatedStateVariable': 'ConfigurationStatus', 'direction': 'in', 'name': 'configurationStatus'}],\
             'ReleaseConfigurationToken': [\
@@ -278,7 +253,12 @@ class TestActSvc(ShoeTestXml):
                 {'relatedStateVariable': 'ARG_ConfigurationToken', 'direction': 'in', 'name': 'configurationToken'},\
                 {'relatedStateVariable': 'ARG_HeosNetId', 'direction': 'in', 'name': 'HEOSNetID'}]}
 
-        self._stateVarTbl = {\
+        return cmndTbl
+
+    @property
+    def stateVarTbl(self):
+
+        stateVarTbl = {\
             'pass': {'dataType': 'string', '@sendEvents': 'no', 'name': 'pass'},\
             'LEDConfig': {'dataType': 'string', '@sendEvents': 'no', 'name': 'LEDConfig'},\
             'SessionId': {'dataType': 'string', '@sendEvents': 'no', 'name': 'SessionId'},\
@@ -412,7 +392,11 @@ class TestActSvc(ShoeTestXml):
             'ARG_UserName': {'dataType': 'string', '@sendEvents': 'no', 'name': 'ARG_UserName'},\
             'user': {'dataType': 'string', '@sendEvents': 'no', 'name': 'user'}}
 
-        self.xmlDict = {'scpd': {'actionList': {'action': [\
+        return stateVarTbl
+
+    @property
+    def scpd(self):
+        scpd = {'scpd': {'actionList': {'action': [\
              {'argumentList': {'argument': [\
                  {'relatedStateVariable': 'name',\
                   'direction': 'in',\
@@ -1003,248 +987,20 @@ class TestActSvc(ShoeTestXml):
                   'specVersion': {'major': '1',\
                   'minor': '0'}}}
 
-        return
+        return scpd
 
     @property
-    def getCurrStRtn(self):
-        currStTxt='<Event xmlns="urn:schemas-upnp-org:metadata-1-0/ACT/">'\
-                '<ActiveInterface val="1"/>'\
-                '<FriendlyName val="Kitchen"/>'\
-                '<HEOSNetId val="DEFAULT-SSID-8e09dfb09df4FBfa996"/>'\
-                '<LastDiscoveredDevice val=""/>'\
-                '<P2PMode val="NONE"/>'\
-                '<Transcode val="1"/>'\
-                '<AudioConfig val="'\
-                '&lt;AudioConfig&gt;'\
-                '&lt;highpass&gt;0'\
-                '&lt;/highpass&gt;'\
-                '&lt;lowpass&gt;80'\
-                '&lt;/lowpass&gt;'\
-                '&lt;subwooferEnable&gt;0'\
-                '&lt;/subwooferEnable&gt;'\
-                '&lt;outputMode&gt;STEREO'\
-                '&lt;/outputMode&gt;'\
-                '&lt;ampBridged&gt;0'\
-                '&lt;/ampBridged&gt;'\
-                '&lt;soundMode&gt;STEREO'\
-                '&lt;/soundMode&gt;'\
-                '&lt;impedance&gt;'\
-                '&lt;/impedance&gt;'\
-                '&lt;ampPower&gt;1'\
-                '&lt;/ampPower&gt;'\
-                '&lt;availableSoundModes&gt;MOVIE_NORMAL,MUSIC_NORMAL'\
-                '&lt;/availableSoundModes&gt;'\
-                '&lt;sourceDirect&gt;0'\
-                '&lt;/sourceDirect&gt;'\
-                '&lt;bassBoost&gt;0'\
-                '&lt;/bassBoost&gt;'\
-                '&lt;speakerOption&gt;'\
-                '&lt;/speakerOption&gt;'\
-                '&lt;/AudioConfig&gt;"/>'\
-                '<BTConfig val="'\
-                '&lt;BluetoothStatus&gt;'\
-                '&lt;connectedStatus&gt;DISCONNECTED'\
-                '&lt;/connectedStatus&gt;'\
-                '&lt;connectedDevice&gt;'\
-                '&lt;/connectedDevice&gt;'\
-                '&lt;pairedDevices&gt;'\
-                '&lt;/pairedDevices&gt;'\
-                '&lt;hasPairedDevices&gt;0'\
-                '&lt;/hasPairedDevices&gt;'\
-                '&lt;/BluetoothStatus&gt;"/>'\
-                '<ConfigurationStatus val="0"/>'\
-                '<UpgradeComponentInstallProgress val="0"/>'\
-                '<CurrentLanguageLocale val="en_US"/>'\
-                '<CurrentWirelessProfile val="'\
-                '&lt;wirelessProfile SSID=&quot;DEFAULT-SSID-8e09dfb09df4FBfa996&quot;&gt;'\
-                '&lt;wirelessSecurity enabled=&quot;true&quot;&gt;'\
-                '&lt;Mode passPhrase=&quot;DEFAULT-PWD-c4E10186eDA2cbfAEB73454E52C09eDFCBEAC50a2fde2460Dd41&quot;&gt;WPA2-AES'\
-                '&lt;/Mode&gt;'\
-                '&lt;/wirelessSecurity&gt;'\
-                '&lt;/wirelessProfile&gt;"/>'\
-                '<DaylightSaving val="0"/>'\
-                '<IANAName val=""/>'\
-                '<LEDConfig val="'\
-                '&lt;LEDConfig&gt;'\
-                '&lt;led&gt;'\
-                '&lt;name&gt;MODE'\
-                '&lt;/name&gt;'\
-                '&lt;brightness&gt;100'\
-                '&lt;/brightness&gt;'\
-                '&lt;/led&gt;'\
-                '&lt;led&gt;'\
-                '&lt;name&gt;NETWORK'\
-                '&lt;/name&gt;'\
-                '&lt;brightness&gt;100'\
-                '&lt;/brightness&gt;'\
-                '&lt;/led&gt;'\
-                '&lt;led&gt;'\
-                '&lt;name&gt;MUTED'\
-                '&lt;/name&gt;'\
-                '&lt;brightness&gt;100'\
-                '&lt;/brightness&gt;'\
-                '&lt;/led&gt;'\
-                '&lt;led&gt;'\
-                '&lt;name&gt;REAR_STATUS'\
-                '&lt;/name&gt;'\
-                '&lt;brightness&gt;100'\
-                '&lt;/brightness&gt;'\
-                '&lt;/led&gt;'\
-                '&lt;/LEDConfig&gt;"/>'\
-                '<NetworkConfigurationList val="'\
-                '&lt;listNetworkConfigurations&gt;'\
-                '&lt;networkConfiguration id=&quot;1&quot; dhcpOn=&quot;0&quot; enabled=&quot;true&quot;&gt;'\
-                '&lt;Name&gt;eth0'\
-                '&lt;/Name&gt;'\
-                '&lt;Type&gt;LAN'\
-                '&lt;/Type&gt;'\
-                '&lt;IP&gt;10.42.12.12'\
-                '&lt;/IP&gt;'\
-                '&lt;Netmask&gt;255.255.255.0'\
-                '&lt;/Netmask&gt;'\
-                '&lt;Gateway&gt;10.42.12.1'\
-                '&lt;/Gateway&gt;'\
-                '&lt;DNS1&gt;10.42.12.1'\
-                '&lt;/DNS1&gt;'\
-                '&lt;DNS2&gt;0.0.0.0'\
-                '&lt;/DNS2&gt;'\
-                '&lt;DNS3&gt;0.0.0.0'\
-                '&lt;/DNS3&gt;'\
-                '&lt;gwMac&gt;000000000000'\
-                '&lt;/gwMac&gt;'\
-                '&lt;/networkConfiguration&gt;'\
-                '&lt;networkConfiguration id=&quot;2&quot; dhcpOn=&quot;1&quot; enabled=&quot;true&quot;&gt;'\
-                '&lt;Name&gt;wlan0'\
-                '&lt;/Name&gt;'\
-                '&lt;Type&gt;WLAN'\
-                '&lt;/Type&gt;'\
-                '&lt;IP&gt;0.0.0.0'\
-                '&lt;/IP&gt;'\
-                '&lt;Netmask&gt;0.0.0.0'\
-                '&lt;/Netmask&gt;'\
-                '&lt;Gateway&gt;0.0.0.0'\
-                '&lt;/Gateway&gt;'\
-                '&lt;DNS1&gt;0.0.0.0'\
-                '&lt;/DNS1&gt;'\
-                '&lt;DNS2&gt;0.0.0.0'\
-                '&lt;/DNS2&gt;'\
-                '&lt;DNS3&gt;0.0.0.0'\
-                '&lt;/DNS3&gt;'\
-                '&lt;gwMac&gt;'\
-                '&lt;/gwMac&gt;'\
-                '&lt;wirelessProfile SSID=&quot;DEFAULT-SSID-8e09dfb09df4FBfa996&quot;&gt;'\
-                '&lt;wirelessSecurity enabled=&quot;true&quot;&gt;'\
-                '&lt;Mode passPhrase=&quot;DEFAULT-PWD-c4E10186eDA2cbfAEB73454E52C09eDFCBEAC50a2fde2460Dd41&quot;&gt;WPA2-AES'\
-                '&lt;/Mode&gt;'\
-                '&lt;/wirelessSecurity&gt;'\
-                '&lt;/wirelessProfile&gt;'\
-                '&lt;/networkConfiguration&gt;'\
-                '&lt;/listNetworkConfigurations&gt;"/>'\
-                '<NetworkShareConfig val="&lt;NetworkShareConfig&gt;&lt;/NetworkShareConfig&gt;"/>'\
-                '<SessionId val=""/>'\
-                '<SurroundSpeakerConfig val="'\
-                '&lt;SurroundSpeakerConfig&gt;'\
-                '&lt;Front&gt;'\
-                '&lt;enabled&gt;1'\
-                '&lt;/enabled&gt;'\
-                '&lt;crossover&gt;0'\
-                '&lt;/crossover&gt;'\
-                '&lt;Right&gt;'\
-                '&lt;distance&gt;12'\
-                '&lt;/distance&gt;'\
-                '&lt;level&gt;12'\
-                '&lt;/level&gt;'\
-                '&lt;test_tone&gt;0'\
-                '&lt;/test_tone&gt;'\
-                '&lt;/Right&gt;'\
-                '&lt;Left&gt;'\
-                '&lt;distance&gt;12'\
-                '&lt;/distance&gt;'\
-                '&lt;level&gt;12'\
-                '&lt;/level&gt;'\
-                '&lt;test_tone&gt;0'\
-                '&lt;/test_tone&gt;'\
-                '&lt;/Left&gt;'\
-                '&lt;/Front&gt;'\
-                '&lt;Center&gt;'\
-                '&lt;enabled&gt;0'\
-                '&lt;/enabled&gt;'\
-                '&lt;crossover&gt;0'\
-                '&lt;/crossover&gt;'\
-                '&lt;Center&gt;'\
-                '&lt;distance&gt;12'\
-                '&lt;/distance&gt;'\
-                '&lt;level&gt;12'\
-                '&lt;/level&gt;'\
-                '&lt;test_tone&gt;0'\
-                '&lt;/test_tone&gt;'\
-                '&lt;/Center&gt;'\
-                '&lt;/Center&gt;'\
-                '&lt;Subwoofer&gt;'\
-                '&lt;enabled&gt;0'\
-                '&lt;/enabled&gt;'\
-                '&lt;lowpass&gt;250'\
-                '&lt;/lowpass&gt;'\
-                '&lt;phase&gt;0'\
-                '&lt;/phase&gt;'\
-                '&lt;Subwoofer&gt;'\
-                '&lt;distance&gt;12'\
-                '&lt;/distance&gt;'\
-                '&lt;level&gt;12'\
-                '&lt;/level&gt;'\
-                '&lt;test_tone&gt;0'\
-                '&lt;/test_tone&gt;'\
-                '&lt;/Subwoofer&gt;'\
-                '&lt;/Subwoofer&gt;'\
-                '&lt;Rear&gt;'\
-                '&lt;enabled&gt;0'\
-                '&lt;/enabled&gt;'\
-                '&lt;crossover&gt;0'\
-                '&lt;/crossover&gt;'\
-                '&lt;surround_mode&gt;OFF'\
-                '&lt;/surround_mode&gt;'\
-                '&lt;Right&gt;'\
-                '&lt;distance&gt;10'\
-                '&lt;/distance&gt;'\
-                '&lt;level&gt;12'\
-                '&lt;/level&gt;'\
-                '&lt;test_tone&gt;0'\
-                '&lt;/test_tone&gt;'\
-                '&lt;/Right&gt;'\
-                '&lt;Left&gt;'\
-                '&lt;distance&gt;10'\
-                '&lt;/distance&gt;'\
-                '&lt;level&gt;12'\
-                '&lt;/level&gt;'\
-                '&lt;test_tone&gt;0'\
-                '&lt;/test_tone&gt;'\
-                '&lt;/Left&gt;'\
-                '&lt;/Rear&gt;'\
-                '&lt;DistUnit&gt;m'\
-                '&lt;/DistUnit&gt;'\
-                '&lt;/SurroundSpeakerConfig&gt;"/>'\
-                '<TimeZone val="(GMT-8:00)"/>'\
-                '<UpdateAction val="UPDATE_ACTION_NONE"/>'\
-                '<UpdateLevel val="0"/>'\
-                '<UpgradeProgress val="0"/>'\
-                '<UpgradeStatus val="UPGRADE_CURRENT"/>'\
-                '<VolumeLimit val="100"/>'\
-                '<WifiApSsid val=""/>'\
-                '<WirelessState val="LINK_DOWN"/>'\
-                '</Event>'\
+    def getCurrStRtnMsgBody(self):
 
-        return OrderedDict([('CurrentState', currStTxt)])
-
-    @property
-    def getCurrStRtnBody(self):
-
-        rtn = '&lt;Event xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/ACT/&quot;&gt;&lt;ActiveInterface val=&quot;1&quot;/&gt;'\
-                '&lt;FriendlyName val=&quot;Kitchen&quot;/&gt;'\
-                '&lt;HEOSNetId val=&quot;DEFAULT-SSID-8e09dfb09df4FBfa996&quot;/&gt;'\
-                '&lt;LastDiscoveredDevice val=&quot;&quot;/&gt;'\
-                '&lt;P2PMode val=&quot;NONE&quot;/&gt;'\
-                '&lt;Transcode val=&quot;1&quot;/&gt;'\
-                '&lt;AudioConfig val=&quot;&amp;lt;AudioConfig&amp;gt;'\
+        rtn = '<CurrentState>&lt;Event '\
+                    'xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/ACT/&quot;&gt;&lt;ActiveInterface '\
+                    'val=&quot;1&quot;/&gt;'\
+                    '&lt;FriendlyName val=&quot;Kitchen&quot;/&gt;'\
+                    '&lt;HEOSNetId val=&quot;DEFAULT-SSID-8e09dfb09df4FBfa996&quot;/&gt;'\
+                    '&lt;LastDiscoveredDevice val=&quot;&quot;/&gt;'\
+                    '&lt;P2PMode val=&quot;NONE&quot;/&gt;'\
+                    '&lt;Transcode val=&quot;1&quot;/&gt;'\
+                    '&lt;AudioConfig val=&quot;&amp;lt;AudioConfig&amp;gt;'\
                 '&amp;lt;highpass&amp;gt;0&amp;lt;/highpass&amp;gt;'\
                 '&amp;lt;lowpass&amp;gt;80&amp;lt;/lowpass&amp;gt;'\
                 '&amp;lt;subwooferEnable&amp;gt;0&amp;lt;/subwooferEnable&amp;gt;'\
@@ -1260,7 +1016,7 @@ class TestActSvc(ShoeTestXml):
                 '&amp;lt;speakerOption&amp;gt;'\
                 '&amp;lt;/speakerOption&amp;gt;'\
                 '&amp;lt;/AudioConfig&amp;gt;'\
-                '&quot;/&gt;&lt;BTConfig val=&quot;&amp;lt;BluetoothStatus&amp;gt;'\
+                    '&quot;/&gt;&lt;BTConfig val=&quot;&amp;lt;BluetoothStatus&amp;gt;'\
                 '&amp;lt;connectedStatus&amp;gt;DISCONNECTED&amp;lt;/connectedStatus&amp;gt;'\
                 '&amp;lt;connectedDevice&amp;gt;'\
                 '&amp;lt;/connectedDevice&amp;gt;'\
@@ -1268,18 +1024,21 @@ class TestActSvc(ShoeTestXml):
                 '&amp;lt;/pairedDevices&amp;gt;'\
                 '&amp;lt;hasPairedDevices&amp;gt;0&amp;lt;/hasPairedDevices&amp;gt;'\
                 '&amp;lt;/BluetoothStatus&amp;gt;&quot;/&gt;'\
-                '&lt;ConfigurationStatus val=&quot;0&quot;/&gt;'\
-                '&lt;UpgradeComponentInstallProgress val=&quot;0&quot;/&gt;'\
-                '&lt;CurrentLanguageLocale val=&quot;en_US&quot;/&gt;'\
-                '&lt;CurrentWirelessProfile val=&quot;&amp;lt;wirelessProfile SSID=&amp;quot;DEFAULT-SSID-8e09dfb09df4FBfa996&amp;quot;&amp;gt;'\
+                    '&lt;ConfigurationStatus val=&quot;0&quot;/&gt;'\
+                    '&lt;UpgradeComponentInstallProgress val=&quot;0&quot;/&gt;'\
+                    '&lt;CurrentLanguageLocale val=&quot;en_US&quot;/&gt;'\
+                    '&lt;CurrentWirelessProfile val=&quot;'\
+                '&amp;lt;wirelessProfile SSID=&amp;quot;DEFAULT-SSID-8e09dfb09df4FBfa996&amp;quot;&amp;gt;'\
                 '&amp;lt;wirelessSecurity enabled=&amp;quot;true&amp;quot;&amp;gt;'\
-                '&amp;lt;Mode passPhrase=&amp;quot;DEFAULT-PWD-c4E10186eDA2cbfAEB73454E52C09eDFCBEAC50a2fde2460Dd41&amp;quot;&amp;gt;WPA2-AES&amp;lt;/Mode&amp;gt;'\
+                '&amp;lt;Mode passPhrase=&amp;quot;'\
+                    'DEFAULT-PWD-c4E10186eDA2cbfAEB73454E52C09eDFCBEAC50a2fde2460Dd41&amp;quot;&amp;gt;WPA2-AES'\
+                '&amp;lt;/Mode&amp;gt;'\
                 '&amp;lt;/wirelessSecurity&amp;gt;'\
                 '&amp;lt;/wirelessProfile&amp;gt;'\
-                '&quot;/&gt;'\
-                '&lt;DaylightSaving val=&quot;0&quot;/&gt;'\
-                '&lt;IANAName val=&quot;&quot;/&gt;'\
-                '&lt;LEDConfig val=&quot;&amp;lt;LEDConfig&amp;gt;'\
+                    '&quot;/&gt;'\
+                    '&lt;DaylightSaving val=&quot;0&quot;/&gt;'\
+                    '&lt;IANAName val=&quot;&quot;/&gt;'\
+                    '&lt;LEDConfig val=&quot;&amp;lt;LEDConfig&amp;gt;'\
                 '&amp;lt;led&amp;gt;'\
                 '&amp;lt;name&amp;gt;MODE&amp;lt;/name&amp;gt;'\
                 '&amp;lt;brightness&amp;gt;100&amp;lt;/brightness&amp;gt;'\
@@ -1298,7 +1057,8 @@ class TestActSvc(ShoeTestXml):
                 '&amp;lt;/led&amp;gt;'\
                 '&amp;lt;/LEDConfig&amp;gt;&quot;/&gt;'\
                 '&lt;NetworkConfigurationList val=&quot;&amp;lt;listNetworkConfigurations&amp;gt;'\
-                '&amp;lt;networkConfiguration id=&amp;quot;1&amp;quot; dhcpOn=&amp;quot;0&amp;quot; enabled=&amp;quot;true&amp;quot;&amp;gt;'\
+                '&amp;lt;networkConfiguration id=&amp;quot;1&amp;quot; '\
+                    'dhcpOn=&amp;quot;0&amp;quot; enabled=&amp;quot;true&amp;quot;&amp;gt;'\
                 '&amp;lt;Name&amp;gt;eth0&amp;lt;/Name&amp;gt;'\
                 '&amp;lt;Type&amp;gt;LAN&amp;lt;/Type&amp;gt;'\
                 '&amp;lt;IP&amp;gt;10.42.12.12&amp;lt;/IP&amp;gt;'\
@@ -1309,7 +1069,8 @@ class TestActSvc(ShoeTestXml):
                 '&amp;lt;DNS3&amp;gt;0.0.0.0&amp;lt;/DNS3&amp;gt;'\
                 '&amp;lt;gwMac&amp;gt;000000000000&amp;lt;/gwMac&amp;gt;'\
                 '&amp;lt;/networkConfiguration&amp;gt;'\
-                '&amp;lt;networkConfiguration id=&amp;quot;2&amp;quot; dhcpOn=&amp;quot;1&amp;quot; enabled=&amp;quot;true&amp;quot;&amp;gt;'\
+                '&amp;lt;networkConfiguration id=&amp;quot;2&amp;quot; dhcpOn=&amp;quot;1&amp;quot;'\
+                    'enabled=&amp;quot;true&amp;quot;&amp;gt;'\
                 '&amp;lt;Name&amp;gt;wlan0&amp;lt;/Name&amp;gt;'\
                 '&amp;lt;Type&amp;gt;WLAN&amp;lt;/Type&amp;gt;'\
                 '&amp;lt;IP&amp;gt;0.0.0.0&amp;lt;/IP&amp;gt;'\
@@ -1322,15 +1083,17 @@ class TestActSvc(ShoeTestXml):
                 '&amp;lt;/gwMac&amp;gt;'\
                 '&amp;lt;wirelessProfile SSID=&amp;quot;DEFAULT-SSID-8e09dfb09df4FBfa996&amp;quot;&amp;gt;'\
                 '&amp;lt;wirelessSecurity enabled=&amp;quot;true&amp;quot;&amp;gt;'\
-                '&amp;lt;Mode passPhrase=&amp;quot;DEFAULT-PWD-c4E10186eDA2cbfAEB73454E52C09eDFCBEAC50a2fde2460Dd41&amp;quot;&amp;gt;WPA2-AES&amp;lt;/Mode&amp;gt;'\
+                '&amp;lt;Mode passPhrase='\
+                    '&amp;quot;DEFAULT-PWD-c4E10186eDA2cbfAEB73454E52C09eDFCBEAC50a2fde2460Dd41&amp;quot;'\
+                    '&amp;gt;WPA2-AES&amp;lt;/Mode&amp;gt;'\
                 '&amp;lt;/wirelessSecurity&amp;gt;'\
                 '&amp;lt;/wirelessProfile&amp;gt;'\
                 '&amp;lt;/networkConfiguration&amp;gt;'\
                 '&amp;lt;/listNetworkConfigurations&amp;gt;&quot;/&gt;'\
-                '&lt;NetworkShareConfig val=&quot;&amp;lt;NetworkShareConfig&amp;gt;'\
+                    '&lt;NetworkShareConfig val=&quot;&amp;lt;NetworkShareConfig&amp;gt;'\
                 '&amp;lt;/NetworkShareConfig&amp;gt;&quot;/&gt;'\
-                '&lt;SessionId val=&quot;&quot;/&gt;'\
-                '&lt;SurroundSpeakerConfig val=&quot;&amp;lt;SurroundSpeakerConfig&amp;gt;'\
+                    '&lt;SessionId val=&quot;&quot;/&gt;'\
+                    '&lt;SurroundSpeakerConfig val=&quot;&amp;lt;SurroundSpeakerConfig&amp;gt;'\
                 '&amp;lt;Front&amp;gt;'\
                 '&amp;lt;enabled&amp;gt;1&amp;lt;/enabled&amp;gt;'\
                 '&amp;lt;crossover&amp;gt;0&amp;lt;/crossover&amp;gt;'\
@@ -1381,81 +1144,89 @@ class TestActSvc(ShoeTestXml):
                 '&amp;lt;/Rear&amp;gt;'\
                 '&amp;lt;DistUnit&amp;gt;m&amp;lt;/DistUnit&amp;gt;'\
                 '&amp;lt;/SurroundSpeakerConfig&amp;gt;&quot;/&gt;'\
-                '&lt;TimeZone val=&quot;(GMT-8:00)&quot;/&gt;'\
-                '&lt;UpdateAction val=&quot;UPDATE_ACTION_NONE&quot;/&gt;'\
-                '&lt;UpdateLevel val=&quot;0&quot;/&gt;'\
-                '&lt;UpgradeProgress val=&quot;0&quot;/&gt;'\
-                '&lt;UpgradeStatus val=&quot;UPGRADE_CURRENT&quot;/&gt;'\
-                '&lt;VolumeLimit val=&quot;100&quot;/&gt;'\
-                '&lt;WifiApSsid val=&quot;&quot;/&gt;'\
-                '&lt;WirelessState val=&quot;LINK_DOWN&quot;/&gt;'\
-                '&lt;/Event&gt;'
+                    '&lt;TimeZone val=&quot;(GMT-8:00)&quot;/&gt;'\
+                    '&lt;UpdateAction val=&quot;UPDATE_ACTION_NONE&quot;/&gt;'\
+                    '&lt;UpdateLevel val=&quot;0&quot;/&gt;'\
+                    '&lt;UpgradeProgress val=&quot;0&quot;/&gt;'\
+                    '&lt;UpgradeStatus val=&quot;UPGRADE_CURRENT&quot;/&gt;'\
+                    '&lt;VolumeLimit val=&quot;100&quot;/&gt;'\
+                    '&lt;WifiApSsid val=&quot;&quot;/&gt;'\
+                    '&lt;WirelessState val=&quot;LINK_DOWN&quot;/&gt;'\
+                    '&lt;/Event&gt;</CurrentState>'
 
         return rtn
 
     @property
-    def currSt(self):
-        currSt = OrderedDict([\
-         ('ActiveInterface', b'1'),\
-         ('FriendlyName', b'Kitchen'),\
-         ('HEOSNetId', b'DEFAULT-SSID-8e09dfb09df4FBfa996'),\
-         ('LastDiscoveredDevice', b''),\
-         ('P2PMode', b'NONE'),\
-         ('Transcode', b'1'),\
-         ('AudioConfig', {'AudioConfig': \
-             {'highpass': '0', 'lowpass': '80', 'subwooferEnable': '0', 'outputMode': 'STEREO', 'ampBridged': '0', \
-                 'soundMode': 'STEREO', 'impedance': None, 'ampPower': '1', \
-                 'availableSoundModes': 'MOVIE_NORMAL,MUSIC_NORMAL', 'sourceDirect': \
-                 '0', 'bassBoost': '0', 'speakerOption': None}}),\
-         ('BTConfig', {'BluetoothStatus': \
-             {'connectedStatus': 'DISCONNECTED', 'connectedDevice': None, 'pairedDevices': None, 'hasPairedDevices': '0'}}),\
-         ('ConfigurationStatus', b'0'),\
-         ('UpgradeComponentInstallProgress', b'0'),\
-         ('CurrentLanguageLocale', b'en_US'),\
-         ('CurrentWirelessProfile', \
-             {'wirelessProfile': {'wirelessSecurity': {'Mode': \
-                 {'@passPhrase': 'DEFAULT-PWD-c4E10186eDA2cbfAEB73454E52C09eDFCBEAC50a2fde2460Dd41', '#text': 'WPA2-AES'},\
-                 '@enabled': 'true'}, '@SSID': 'DEFAULT-SSID-8e09dfb09df4FBfa996'}}),\
-         ('DaylightSaving', b'0'),\
-         ('IANAName', b''),\
-         ('LEDConfig', {'LEDConfig': {'led': \
-             [{'name': 'MODE', 'brightness': '100'}, \
-                 {'name': 'NETWORK', 'brightness': '100'}, \
-                 {'name': 'MUTED', 'brightness': '100'}, \
-                 {'name': 'REAR_STATUS', 'brightness': '100'}]}}),\
-         ('NetworkConfigurationList', {'listNetworkConfigurations': {'networkConfiguration': [\
-             {'Name': 'eth0', 'Type': 'LAN', 'IP': '10.42.12.12', 'Netmask': '255.255.255.0', 'Gateway': '10.42.12.1', \
-                 'DNS1': '10.42.12.1', 'DNS2': '0.0.0.0', 'DNS3': '0.0.0.0', \
-                 'gwMac': '000000000000', '@id': '1', '@dhcpOn': '0', '@enabled': 'true'}, \
-             {'Name': 'wlan0', 'Type': 'WLAN', 'IP': '0.0.0.0', 'Netmask': '0.0.0.0', 'Gateway': '0.0.0.0', \
-                 'DNS1': '0.0.0.0', 'DNS2': '0.0.0.0', 'DNS3': '0.0.0.0', 'gwMac': None, \
-                 'wirelessProfile': {'wirelessSecurity': \
-                     {'Mode': {'@passPhrase': 'DEFAULT-PWD-c4E10186eDA2cbfAEB73454E52C09eDFCBEAC50a2fde2460Dd41', '#text': 'WPA2-AES'}, \
-                         '@enabled': 'true'}, '@SSID': 'DEFAULT-SSID-8e09dfb09df4FBfa996'}, \
-                     '@id': '2', '@dhcpOn': '1', '@enabled': 'true'}]}}),\
-         ('NetworkShareConfig', {'NetworkShareConfig': None}),\
-         ('SessionId', b''),\
-         ('SurroundSpeakerConfig', {'SurroundSpeakerConfig': {'Front': {'enabled': '1', 'crossover': '0', \
-             'Right': {'distance': '12', 'level': '12', 'test_tone': '0'}, \
-             'Left': {'distance': '12', 'level': '12', 'test_tone': '0'}}, \
-             'Center': {'enabled': '0', 'crossover': '0', 'Center': {'distance': '12', 'level': '12', 'test_tone': '0'}}, \
-             'Subwoofer': {'enabled': '0', 'lowpass': '250', 'phase': '0', 'Subwoofer': {'distance': '12', 'level': '12', 'test_tone': '0'}}, \
-             'Rear': {'enabled': '0', 'crossover': '0', 'surround_mode': 'OFF', \
-                 'Right': {'distance': '10', 'level': '12', 'test_tone': '0'}, \
-                 'Left': {'distance': '10', 'level': '12', 'test_tone': '0'}}, 'DistUnit': 'm'}}),\
-         ('TimeZone', b'(GMT-8:00)'),\
-         ('UpdateAction', b'UPDATE_ACTION_NONE'),\
-         ('UpdateLevel', b'0'),\
-         ('UpgradeProgress', b'0'),\
-         ('UpgradeStatus', b'UPGRADE_CURRENT'),\
-         ('VolumeLimit', b'100'),\
-         ('WifiApSsid', b''),\
-         ('WirelessState', b'LINK_DOWN')])
+    def getCurrStRtn(self):
+        rtn = OrderedDict([('CurrentState', \
+         OrderedDict([\
+            ('ActiveInterface', '1'),\
+            ('FriendlyName', 'Kitchen'),\
+            ('HEOSNetId', 'DEFAULT-SSID-8e09dfb09df4FBfa996'),\
+            ('LastDiscoveredDevice', ''),\
+            ('P2PMode', 'NONE'),\
+            ('Transcode', '1'),\
+            ('AudioConfig', {'AudioConfig': \
+                {'highpass': '0', 'lowpass': '80', 'subwooferEnable': '0', 'outputMode': 'STEREO', 'ampBridged': '0', \
+                    'soundMode': 'STEREO', 'impedance': None, 'ampPower': '1', \
+                    'availableSoundModes': 'MOVIE_NORMAL,MUSIC_NORMAL', 'sourceDirect': \
+                    '0', 'bassBoost': '0', 'speakerOption': None}}),\
+            ('BTConfig', {'BluetoothStatus': \
+                {'connectedStatus': 'DISCONNECTED', 'connectedDevice': None, 'pairedDevices': None, 'hasPairedDevices': '0'}}),\
+            ('ConfigurationStatus', '0'),\
+            ('UpgradeComponentInstallProgress', '0'),\
+            ('CurrentLanguageLocale', 'en_US'),\
+            ('CurrentWirelessProfile', \
+                {'wirelessProfile': {'wirelessSecurity': {'Mode': \
+                    {'@passPhrase':
+                        'DEFAULT-PWD-c4E10186eDA2cbfAEB73454E52C09eDFCBEAC50a2fde2460Dd41',\
+                        '#text': 'WPA2-AES'},\
+                            '@enabled': 'true'}, '@SSID': 'DEFAULT-SSID-8e09dfb09df4FBfa996'}}),\
+            ('DaylightSaving', '0'),\
+            ('IANAName', ''),\
+            ('LEDConfig', {'LEDConfig': {'led': \
+                [{'name': 'MODE', 'brightness': '100'}, \
+                    {'name': 'NETWORK', 'brightness': '100'}, \
+                    {'name': 'MUTED', 'brightness': '100'}, \
+                    {'name': 'REAR_STATUS', 'brightness': '100'}]}}),\
+            ('NetworkConfigurationList', {'listNetworkConfigurations': {'networkConfiguration': [\
+                {'Name': 'eth0', 'Type': 'LAN', 'IP': '10.42.12.12', 'Netmask': '255.255.255.0', 'Gateway': '10.42.12.1', \
+                    'DNS1': '10.42.12.1', 'DNS2': '0.0.0.0', 'DNS3': '0.0.0.0', \
+                    'gwMac': '000000000000', '@id': '1', '@dhcpOn': '0', '@enabled': 'true'}, \
+                {'Name': 'wlan0', 'Type': 'WLAN', 'IP': '0.0.0.0', 'Netmask': '0.0.0.0', 'Gateway': '0.0.0.0', \
+                    'DNS1': '0.0.0.0', 'DNS2': '0.0.0.0', 'DNS3': '0.0.0.0', 'gwMac': None, \
+                    'wirelessProfile': {'wirelessSecurity': \
+                        {'Mode': {'@passPhrase':
+                                'DEFAULT-PWD-c4E10186eDA2cbfAEB73454E52C09eDFCBEAC50a2fde2460Dd41', \
+                                '#text': 'WPA2-AES'}, \
+                            '@enabled': 'true'}, '@SSID': 'DEFAULT-SSID-8e09dfb09df4FBfa996'}, \
+                        '@id': '2', '@dhcpOn': '1', '@enabled': 'true'}]}}),\
+            ('NetworkShareConfig', {'NetworkShareConfig': None}),\
+            ('SessionId', ''),\
+            ('SurroundSpeakerConfig', {'SurroundSpeakerConfig': {'Front': {'enabled': '1', 'crossover': '0', \
+                'Right': {'distance': '12', 'level': '12', 'test_tone': '0'}, \
+                'Left': {'distance': '12', 'level': '12', 'test_tone': '0'}}, \
+                'Center': {'enabled': '0', 'crossover': '0', \
+                    'Center': {'distance': '12', 'level': '12', 'test_tone': '0'}}, \
+                'Subwoofer': {'enabled': '0', 'lowpass': '250', 'phase': '0', \
+                    'Subwoofer': {'distance': '12', 'level': '12', 'test_tone': '0'}}, \
+                'Rear': {'enabled': '0', 'crossover': '0', 'surround_mode': 'OFF', \
+                    'Right': {'distance': '10', 'level': '12', 'test_tone': '0'}, \
+                    'Left': {'distance': '10', 'level': '12', 'test_tone': '0'}}, 'DistUnit': 'm'}}),\
+            ('TimeZone', '(GMT-8:00)'),\
+            ('UpdateAction', 'UPDATE_ACTION_NONE'),\
+            ('UpdateLevel', '0'),\
+            ('UpgradeProgress', '0'),\
+            ('UpgradeStatus', 'UPGRADE_CURRENT'),\
+            ('VolumeLimit', '100'),\
+            ('WifiApSsid', ''),\
+            ('WirelessState', 'LINK_DOWN')\
+            ]) )])
 
-        return currSt
+        return rtn
 
     @property
-    def currStFmt(self):
+    def getCurrStFmtOutput(self):
 
         currStFmtRtn=\
             "ActiveInterface  : b'1'\n"\
@@ -1604,72 +1375,3 @@ class TestActSvc(ShoeTestXml):
             "WirelessState    : b'LINK_DOWN'\n"\
 
         return currStFmtRtn
-
-    @property
-    def cmndList(self):
-        cmndListRtn=\
-            ['AddNetworkShare',\
-                 'ApplyChanges',\
-                 'CancelChanges',\
-                 'CancelFirmwareUpgrade',\
-                 'CheckForFirmwareUpgrade',\
-                 'DeleteNetworkShare',\
-                 'GetAccessPointList',\
-                 'GetActiveInterface',\
-                 'GetAudioConfig',\
-                 'GetBluetoothStatus',\
-                 'GetConfigurationStatus',\
-                 'GetConfigurationToken',\
-                 'GetCurrentLanguage',\
-                 'GetCurrentState',\
-                 'GetDaylightSaving',\
-                 'GetFriendlyName',\
-                 'GetHEOSNetID',\
-                 'GetLEDConfig',\
-                 'GetNetworkConfiguration',\
-                 'GetNetworkConfigurationList',\
-                 'GetNetworkShares',\
-                 'GetP2PMode',\
-                 'GetSessionId',\
-                 'GetSupportedLanguageList',\
-                 'GetSurroundSpeakerConfig',\
-                 'GetTimeZone',\
-                 'GetTranscode',\
-                 'GetUpdateAction',\
-                 'GetUpdateLevel',\
-                 'GetUpgradeProgress',\
-                 'GetUpgradeStatus',\
-                 'GetVolumeLimit',\
-                 'GetWirelessProfile',\
-                 'GetWirelessState',\
-                 'GetWirelessStatus',\
-                 'ReIndexNetworkShare',\
-                 'ReMountNetworkShare',\
-                 'RegisterUser',\
-                 'ReleaseConfigurationToken',\
-                 'SetAudioConfig',\
-                 'SetBluetoothAction',\
-                 'SetConfigurationStatus',\
-                 'SetCurrentLanguage',\
-                 'SetDaylightSaving',\
-                 'SetFriendlyName',\
-                 'SetHEOSNetID',\
-                 'SetLEDConfig',\
-                 'SetNetworkConfiguration',\
-                 'SetSessionId',\
-                 'SetSurroundSpeakerConfig',\
-                 'SetTimeZone',\
-                 'SetTranscode',\
-                 'SetUpdateAction',\
-                 'SetUpdateLevel',\
-                 'SetVolumeLimit',\
-                 'SetWPSPinSSID',\
-                 'SetWirelessProfile',\
-                 'StartInvitation',\
-                 'StartWifiAp',\
-                 'StopInvitation',\
-                 'StopWifiAp',\
-                 'SubmitDiagnostics',\
-                 'UpdateFirmware']
-
-        return cmndListRtn

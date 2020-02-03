@@ -34,14 +34,14 @@ class ShoeDevRoot(ShoeDev):
 
     AIOS_CFG_PATH='/upnp/desc/aios_device/aios_device.xml'
 
-    def __init__(self, aiosCfg=None, host, dbug=0, port=60006):
+    def __init__(self, host, aiosCfg=None, loglvl=0, port=60006):
 
         super().__init__(host=host,
                         path=path,
                         port=port,
-                        dbug=dbug)
+                        loglvl=loglvl)
 
-        self.devs={}
+        self._devs=None
         self._aiosCfg=aiosCfg
         return
 
@@ -53,13 +53,13 @@ class ShoeDevRoot(ShoeDev):
 
         super().init()
 
-        self.devs=self._getDevs(self.cfg)
+        self._devs=self._getDevs(self.cfg)
 
         try:
             self.sysName=self.cfg[self.SYSNAME_KEYS]
         except KeyError:
             self.sysName = None
-            print("WARNING:System name missing from root dev cfg")
+            self.log.warning("System name missing from root dev cfg")
         except:
             raise
         return
@@ -69,6 +69,81 @@ class ShoeDevRoot(ShoeDev):
         init()
         return
 
+    def sendCmnd(self, cmnd, args, devName=None, svcName=None):
+        dev=None
+        svc=None
+
+        if devName is None:
+            cmndTree=self._findCmnd(cmnd)
+            try:
+                devName=list(cmndTree.keys())[0]
+            except IndexError:
+                raise ShoeDevUnknownParam("Cmnd %s not found" % cmnd)
+
+        dev=self.getDev(devName)
+
+        if svcName is None:
+            svcNames=dev.findCmnd(cmnd)
+            try:
+                svcName=svcNames[0]
+            except IndexError:
+                raise ShoeDevUnknownParam("Cmnd %s not found" % cmnd)
+            except:
+                raise
+
+        svc=self.getSvc(svcName)
+
+        if svc is None:
+            raise ShoeDevErr("No service found for cmnd %s" % cmnd)
+
+        return svc.sendCmnd(cmnd, args)
+
+    def getDev(self, devName):
+        try:
+            dev=self._devs[devName]
+        except TypeError:
+            raise ShoeDevErr("Root Device Not Initialized")
+        except KeyError:
+            raise ShoeDevErr("Dev %s not found" % devName)
+        except:
+            raise
+
+        return dev
+
+    def findCmnd(self, cmnd):
+        devs={}
+
+        if self._devs is None:
+            raise ShoeDevErr("Root Device Not Initialized")
+
+        for dev in self._devs.values():
+            svcs=dev._findSvc(cmnd)
+            if len(svcs) is not 0:
+                devs[dev.name]=svcs
+
+        return devs
+
+    def getCmndTree(self):
+        cmndTree={}
+
+        if self._devs is None:
+            raise ShoeDevErr("Root Device Not Initialized")
+
+        for devName,dev in self._devs.items():
+            try:
+                svcNames=dev._svcs.keys()
+            except ValueError:
+                raise ShoeDevErr("Device %s not properly initialized" %
+                                    devName)
+            except:
+                raise
+
+            cmndTree[devName]={}
+
+            for svcName in svcNames:
+                svc=dev.getSvc(svcName)
+                cmndTree[devName][svcName]=svc.cmnds
+
     def _getRootDevCfg(self, aiosCfg):
 
         try:
@@ -76,8 +151,7 @@ class ShoeDevRoot(ShoeDev):
                 aiosCfg[self.ROOTDEV_KEYS[0]]\
                             [self.ROOTDEV_KEYS[1]]
         except KeyError:
-            errStr="Bad Aios Device XML File"
-            raise ShoeDevErr(errStr)
+            raise ShoeDevErr("Bad Aios Device XML File")
         except:
             raise
 
@@ -87,8 +161,7 @@ class ShoeDevRoot(ShoeDev):
         devs={}
 
         if rootDevCfg is None:
-            errStr="No root configuration"
-            raise ShoeDevErr(errStr)
+            raise ShoeDevErr("No root configuration")
 
         try:
             devList=\
@@ -101,26 +174,14 @@ class ShoeDevRoot(ShoeDev):
             raise
 
         for devCfg in devList:
-            shoeDev=ShoeDev(devCfg)
+            shoeDev=ShoeDev(devCfg=devCfg,
+                            host=self.host,
+                            port=self.port,
+                            loglvl=self.loglvl)
             shoeDev.init()
             devs[shoeDev.name]=shoeDev
 
         return devs
-
-    def getDev(self, name):
-        try:
-            dev=self._devs[name]
-        except TypeError:
-            errStr="Device Configuration Not Initialized"
-            raise ShoeDevErr(errStr)
-        except KeyError:
-            errStr="Device Tag %s Not Available. Choices are %s"\
-                % (devTag, self._devs.keys())
-            raise ShoeDevErr(errStr)
-        except:
-            raise
-
-        return dev
 
     def _setSysName(self):
         self.sysName=None

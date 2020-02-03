@@ -2,9 +2,8 @@
 #SHOE - An open source HEOS configuration and control project
 #Copyright (C) 2020  Mike Karasoff, mike@karatronics.com
 #
-#shoeZone.py
-#Class impliments ZoneControl service specific functions.
-#
+#testShoeDev.py
+# Base class for test devices
 #
 ##########################################################################
 #GPLv.3 License
@@ -23,19 +22,22 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ############################################################################
-from shoeSvc import *
-import copy
 
-class ShoeSvcZone(ShoeSvc):
-    DEV_NAME='AiosServices'
-    NAME='ZoneControl'
+class TestShoeDev():
+    def __init__(self, name, urn, udn, cfg):
+        self.name=name
+        self.urn=urn
+        self.udn=udn
+        self.uuid=udn.split(':')[-1].replace('-','')
+        self.cfg=cfg
 
-    def __init__(self, host, loglvl=0, port=60006):
-        super().__init__(host=host,
-                         devTag=self.DEV_NAME,
-                         svcTag=self.NAME,
-                         loglvl=loglvl,
-                         port=port)
-        self.log=ConsoleLog(self.__class__.__name__, loglvl)
+        self.svcs={}
 
         return
+
+    @property
+    def cmnds(self):
+        cmnds=[]
+        for svc in self.svcs.values():
+            cmnds.extend(svc.cmnds.values())
+        return cmnds

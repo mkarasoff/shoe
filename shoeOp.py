@@ -2,7 +2,7 @@
 #SHOE - An open source HEOS configuration and control project
 #Copyright (C) 2020  Mike Karasoff, mike@karatronics.com
 #
-#shoeExpert.py
+#shoeOp.py
 #Base class for CLI functions
 #
 #
@@ -24,15 +24,17 @@
 #
 ############################################################################
 from shoeState import *
+from consoleLog import *
 
 class ShoeOp():
     CURRSTATE_CMND='GetCurrentState'
     FMT_LBL_LEN=16
     FMT_TAB_LEN=4
 
-    def __init__(self, shoeSys, dbug=0):
+    def __init__(self, shoeSys, loglvl=0):
+        self.log=ConsoleLog(self.__class__.__name__, loglvl)
         self.shoeSys=shoeSys
-        self.dbug=dbug
+        self.loglvl=loglvl
 
         self.svcNames=shoeSys.svcs.keys()
 
@@ -40,17 +42,7 @@ class ShoeOp():
 
     def _getCurrState(self, svcName):
         currStRtn=self.shoeSys.sendCmnd(self.CURRSTATE_CMND, svcName=svcName)
-        if self.dbug > 0:
-            print("----------------Current state cmnd return", currStRtn.msgArgs)
-
-        state=ShoeState(
-                xmlText=currStRtn.msgArgs['CurrentState'])
-
-        svcState=state.getCfg()
-        if self.dbug > 0:
-            print("----------------Dev State Rtn", svcState)
-
-        return svcState
+        return currStRtn
 
     def _fmtOp(self, opData, tab=0):
         fmt= '{0:>%s}{1:%s} : {2:<0}\n'%(tab, self.FMT_LBL_LEN)
@@ -60,16 +52,19 @@ class ShoeOp():
         try:
 
             for lbl,val in opData.items():
-                if type(val) is dict:
+                valType=type(val)
+                if valType is dict:
                     fmtStr=fmtStr+fmt.format('', str(lbl), '')
                     fmtStr=fmtStr+self._fmtOp(val, tab+self.FMT_TAB_LEN)
-                elif type(val) is list:
+                elif valType is list:
                     fmtStr=fmt.format('', lbl, '')
                     lstBreak='-'*self.FMT_LBL_LEN
                     fmtStr=fmtStr+lblessFmt.format('', lstBreak, '')
                     for valEl in val:
                         fmtStr=fmtStr+self._fmtOp(valEl, tab+self.FMT_TAB_LEN)
                         fmtStr=fmtStr+lblessFmt.format('', lstBreak, '')
+                elif valType is bytes:
+                    fmtStr=fmtStr+fmt.format('', str(lbl), str(val.decode()))
                 else:
                     fmtStr=fmtStr+fmt.format('', str(lbl), str(val))
 
@@ -93,7 +88,7 @@ class TestShoeOp(TestShoeHttp):
         self.host='127.0.0.1'
         self.svcName=None
         self.shoeSys=ShoeSys(self.host)
-        self.op=ShoeOp(self.shoeSys, dbug=2)
+        self.op=ShoeOp(self.shoeSys, loglvl=logging.DEBUG)
         self.cfg=False
         self.httpHandler=TestShoeCurrStHttpHandler
         #This gets config

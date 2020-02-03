@@ -23,44 +23,23 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ############################################################################
+from .testShoeSvc import *
+from .testShoeCmnd import *
+from .testShoeEvent import *
 
-from .shoeTestXml import ShoeTestXml
 from collections import OrderedDict
 
-class TestZoneCtrlSvc(ShoeTestXml):
-    def __init__(self):
-        xmlFile='ZoneControl.xml'
-        md5hex='181615f9e5cc9c18f413ba3719afedb6'
-        self.urlPath='/upnp/scpd/AiosServicesDvc/'
-        self.urn='urn:schemas-denon-com:service:ZoneControl:2'
-        self.name='ZoneControl'
-        self.devName='AiosServices'
+class TestZoneCtrlSvc(TestShoeSvc):
+    def __init__(self, devName, svcCfg):
+        super().__init__(xmlFile='ZoneControl.xml',
+                            md5hex='181615f9e5cc9c18f413ba3719afedb6',
+                            devName=devName,
+                            svcCfg=svcCfg)
 
-        self.url='%s%s' % (self.urlPath, xmlFile)
-        super(TestZoneCtrlSvc, self).__init__(xmlFile, md5hex)
 ################################################################################
-        self.getCurrStCmnd='GetCurrentState'
+        cmnd=TestShoeEvent('GetCurrentState', self.urn, self.cmndPath)
 
-        self.getCurrStArg= [\
-                            {'relatedStateVariable': 'LastChange', 'direction': 'out', 'name': 'CurrentState',\
-                             'state' : {'dataType': 'string', '@sendEvents': 'yes', 'name': 'LastChange'}},]
-
-        self.getCurrStHdr={'HOST': '127.0.0.1:60006', \
-                            'CONTENT-LENGTH': '247', \
-                            'Accept-Ranges': 'bytes', \
-                            'CONTENT-TYPE': 'text/xml; charset="utf-8"', \
-                            'SOAPACTION': '"urn:schemas-denon-com:service:ZoneControl:2#GetCurrentState"', \
-                            'USER-AGENT': 'LINUX UPnP/1.0 Denon-Heos/149200'}
-
-        self.getCurrStCmndXml= '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" '\
-                                    's:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">'\
-                                    '<s:Body>'\
-                                    '<u:GetCurrentState xmlns:u="urn:schemas-denon-com:service:ZoneControl:2">'\
-                                    '</u:GetCurrentState>'\
-                                    '</s:Body>'\
-                                    '</s:Envelope>'
-
-        self.getCurrStRtnBody = '&lt;Event xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/ZCS/&quot;&gt;&lt;'\
+        cmnd.rtnMsgBody='<CurrentState>&lt;Event xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/ZCS/&quot;&gt;&lt;'\
                 'ZoneConnectedList val=&quot;caf7916a94db1a1300800005cdfbb9c6,'\
                 'f3ddb59f3e691f1e00800005cdff1706&quot;/&gt;&lt;ZoneFriendlyName val=&quot;Family Room&quot;'\
                 '/&gt;&lt;ZoneMemberList val=&quot;caf7916a94db1a1300800005cdfbb9c6,'\
@@ -68,33 +47,10 @@ class TestZoneCtrlSvc(ShoeTestXml):
                 'caf7916a94db1a1300800005cdfbb9c6,ZONE_LEAD,f3ddb59f3e691f1e00800005cdff1706,ZONE_SLAVE&quot;'\
                 '/&gt;&lt;ZoneMute val=&quot;0&quot;/&gt;&lt;ZoneStatus val=&quot;ZONE_LEAD&quot;/&gt;&lt;'\
                 'ZoneVolume val=&quot;31&quot;/&gt;&lt;ZoneMinimise val=&quot;0&quot;/&gt;&lt;ZoneUUID val=&quot;'\
-                '17083c46d003001000800005cdfbb9c6&quot;/&gt;&lt;/Event&gt;'
+                '17083c46d003001000800005cdfbb9c6&quot;/&gt;&lt;/Event&gt;</CurrentState>'
 
-        self.getCurrStRtnXml='<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" '\
-                's:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">'\
-                '<s:Body>'\
-                    '<u:GetCurrentStateResponse '\
-                        'xmlns:u="urn:schemas-denon-com:service:ZoneControl:2">'\
-                        '<CurrentState>%s</CurrentState></u:GetCurrentStateResponse>'\
-                    '</s:Body>'\
-                '</s:Envelope>' % self.getCurrStRtnBody
-
-        currStTxt='<Event xmlns="urn:schemas-upnp-org:metadata-1-0/ZCS/">'\
-                '<ZoneConnectedList val="caf7916a94db1a1300800005cdfbb9c6,'\
-                    'f3ddb59f3e691f1e00800005cdff1706"/>'\
-                '<ZoneFriendlyName val="Family Room"/>'\
-                '<ZoneMemberList val="caf7916a94db1a1300800005cdfbb9c6,'\
-                    'f3ddb59f3e691f1e00800005cdff1706"/>'\
-                '<ZoneMemberStatusList val="caf7916a94db1a1300800005cdfbb9c6,ZONE_LEAD,'\
-                                        'f3ddb59f3e691f1e00800005cdff1706,ZONE_SLAVE"/>'\
-                '<ZoneMute val="0"/><ZoneStatus val="ZONE_LEAD"/>'\
-                '<ZoneVolume val="31"/><ZoneMinimise val="0"/>'\
-                '<ZoneUUID val="17083c46d003001000800005cdfbb9c6"/>'\
-                '</Event>'
-
-        self.getCurrStRtn=OrderedDict([('CurrentState', currStTxt),])
-
-        self.currSt=OrderedDict([\
+        cmnd.rtn=OrderedDict([('CurrentState',
+            OrderedDict([\
                 ('ZoneConnectedList',\
                     b'caf7916a94db1a1300800005cdfbb9c6,f3ddb59f3e691f1e00800005cdff1706'),\
                 ('ZoneFriendlyName', b'Family Room'), \
@@ -106,9 +62,9 @@ class TestZoneCtrlSvc(ShoeTestXml):
                 ('ZoneStatus', b'ZONE_LEAD'), \
                 ('ZoneVolume', b'31'), \
                 ('ZoneMinimise', b'0'), \
-                ('ZoneUUID', b'17083c46d003001000800005cdfbb9c6')])\
+                ('ZoneUUID', b'17083c46d003001000800005cdfbb9c6')]))])
 
-        self.currStFmt=\
+        cmnd.fmtOutput=\
             "ZoneConnectedList : b'caf7916a94db1a1300800005cdfbb9c6,f3ddb59f3e691f1e00800005cdff1706'\n"\
             "ZoneFriendlyName : b'Family Room'\n"\
             "ZoneMemberList   : b'caf7916a94db1a1300800005cdfbb9c6,f3ddb59f3e691f1e00800005cdff1706'\n"\
@@ -120,8 +76,17 @@ class TestZoneCtrlSvc(ShoeTestXml):
             "ZoneMinimise     : b'0'\n"\
             "ZoneUUID         : b'17083c46d003001000800005cdfbb9c6'\n"\
 
+        cmnd.argsCfg= [\
+                        {'relatedStateVariable': 'LastChange', 'direction': 'out', 'name': 'CurrentState',\
+                           'state' : {'dataType': 'string', '@sendEvents': 'yes', 'name': 'LastChange'}},]
+
+        self.cmnds[cmnd.name]=cmnd
+
+        return
 ################################################################################
-        self._cmndTbl ={\
+    @property
+    def cmndTbl(self):
+        cmndTbl ={\
              'DummyAction_ZoneControl': [\
                 {'relatedStateVariable': 'A_ARG_TYPE_ZoneUUID', 'direction': 'in', 'name': 'ZoneUUID'},\
                 {'relatedStateVariable': 'A_ARG_TYPE_DummyValueZoneControl', 'direction': 'out', 'name': 'DummyValue'}],\
@@ -181,8 +146,11 @@ class TestZoneCtrlSvc(ShoeTestXml):
              'SetZoneVolume': [\
                 {'relatedStateVariable': 'A_ARG_TYPE_ZoneUUID', 'direction': 'in', 'name': 'ZoneUUID'},\
                 {'relatedStateVariable': 'ZoneVolume', 'direction': 'in', 'name': 'ZoneVolume'}]}
+        return cmndTbl
 
-        self._stateVarTbl={\
+    @property
+    def stateVarTbl(self):
+        stateVarTbl={\
             'A_ARG_TYPE_ZoneUUID':\
                 {'dataType': 'string', '@sendEvents': 'no', 'name': 'A_ARG_TYPE_ZoneUUID'},\
             'ZoneVolume':\
@@ -217,8 +185,11 @@ class TestZoneCtrlSvc(ShoeTestXml):
                 {'dataType': 'string', '@sendEvents': 'no', 'name': 'ZoneMemberStatusList'},\
             'ZoneMute':\
                 {'dataType': 'boolean', 'defaultValue': '0', 'name': 'ZoneMute', '@sendEvents': 'no'}}
+        return stateVarTbl
 
-        self.xmlDict={'scpd': {'actionList': {'action': [\
+    @property
+    def scpd(self):
+        scpd={'scpd': {'actionList': {'action': [\
             {'argumentList': {'argument': [\
                 {'relatedStateVariable': 'A_ARG_TYPE_ZoneUUID',\
                  'direction': 'in',\
@@ -434,25 +405,4 @@ class TestZoneCtrlSvc(ShoeTestXml):
                  'specVersion': {'major': '1',\
                  'minor': '0'}}}
 
-        self.cmndList=\
-                ['AddMemberToZone',\
-                 'CreateZone',\
-                 'DestroyZone',\
-                 'DummyAction_ZoneControl',\
-                 'GetCurrentState',\
-                 'GetMemberStatus',\
-                 'GetZoneConnectedList',\
-                 'GetZoneFriendlyName',\
-                 'GetZoneMemberList',\
-                 'GetZoneMinimise',\
-                 'GetZoneMute',\
-                 'GetZoneStatus',\
-                 'GetZoneUUID',\
-                 'GetZoneVolume',\
-                 'RemoveMemberFromZone',\
-                 'SetZoneFriendlyName',\
-                 'SetZoneMinimise',\
-                 'SetZoneMute',\
-                 'SetZoneVolume',\
-                 'TestZoneConnectivity']
-        return
+        return scpd

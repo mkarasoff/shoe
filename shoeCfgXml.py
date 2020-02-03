@@ -30,24 +30,26 @@ from collections import OrderedDict
 from lxml import etree
 from collections import defaultdict
 from io import BytesIO
+from consoleLog import *
 
 class ShoeCfgXml():
-    def __init__(self, host=None, path='', dbug=0, port=60006):
+    def __init__(self, host=None, path='', loglvl=0, port=60006):
+        self.log=ConsoleLog(self.__class__.__name__, loglvl)
         self.host = host
         self.port = port
         self.path = path
-        self.dbug=dbug
+        self.loglvl=loglvl
         self.xmlDict={}
         return
 
     def getCfg(self, path=None):
-        if path=None
+        if path is None:
             path=self.path
 
         self.xmlText = self._getXmlText(path,
                 self.host,
                 self.port,
-                self.dbug)
+                self.loglvl)
 
         self.xmlDict = self._getXmlDict(self.xmlText)
 
@@ -67,9 +69,9 @@ class ShoeCfgXml():
 
         return xmlDict
 
-    def _getXmlText(self, path, host, port, dbug):
-        httpRes = self._getHttp(path, host, port, dbug)
-        print("status", httpRes.status)
+    def _getXmlText(self, path, host, port, loglvl=None):
+        httpRes = self._getHttp(path, host, port, loglvl)
+        self.log.debug("status %s", httpRes.status)
         try:
             status = int(httpRes.status)
         except:
@@ -129,6 +131,8 @@ class ShoeCfgXml():
                             for k, v in list(t.attrib.items()))
         if t.text:
             text = t.text.strip()
+            if text is None:
+                text=''
             if children or t.attrib:
                 if text:
                   d[t.tag]['#text'] = text
@@ -136,10 +140,14 @@ class ShoeCfgXml():
                 d[t.tag] = text
         return d
 
-    def _getHttp(self, path, host, port, dbug):
+    def _getHttp(self, path, host, port, loglvl):
         conn = http.client.HTTPConnection(host, port)
 
-        conn.set_debuglevel(self)
+        if loglvl <= self.log.DEBUG:
+            conn.set_debuglevel(1)
+        else:
+            conn.set_debuglevel(0)
+
         conn.putrequest('GET', path, skip_host=True, skip_accept_encoding=True)
 
         host="%s:%s" % (host, port)
@@ -152,7 +160,7 @@ class ShoeCfgXml():
             raise ShoeCfgXmlHttpSendErr(str(e))
 
         try:
-            print("Host", host)
+            self.log.debug("Host", host)
             httpRes = conn.getresponse()
         except Exception as e:
             conn.close()
@@ -180,14 +188,14 @@ class TestShoeCfgXml(TestShoeHttp):
         self.host='127.0.0.1'
 
         self.testObjs=[
-                self.testAiosDev,
+                self.testRootDev,
                 self.testActSvc,
                 self.testGroupCtrlSvc,
                 self.testZoneCtrlSvc]
         return
 
     def _sendTestMsgs(self):
-        shoeCfg=ShoeCfgXml(self.host, self.testFile, dbug=10)
+        shoeCfg=ShoeCfgXml(self.host, self.testFile, loglvl=10)
         self.xmlDict=shoeCfg.getCfg()
         return
 

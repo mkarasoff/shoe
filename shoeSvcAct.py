@@ -31,12 +31,13 @@ class ShoeSvcAct(ShoeSvc):
     DEV_NAME='ACT-Denon'
     NAME='ACT'
 
-    def __init__(self, host, dbug=0, port=60006):
+    def __init__(self, host, loglvl=0, port=60006):
         super().__init__(host=host,
                          devTag=self.DEV_NAME,
                          svcTag=self.NAME,
-                         dbug=dbug,
+                         loglvl=loglvl,
                          port=port)
+        self.log=ConsoleLog(self.__class__.__name__, loglvl)
 
         self.info=None
         return
@@ -59,7 +60,7 @@ class TestShoeSvcAct(unittest.TestCase):
     HOST='127.0.0.1'
 
     def runTest(self):
-        testAiosObj=TestAiosDev()
+        testAiosObj=TestRootDev()
         self.aiosXmlStr=testAiosObj.xmlStr
 
         testActObj=TestActSvc()

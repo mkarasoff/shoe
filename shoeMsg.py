@@ -29,6 +29,7 @@ from collections import OrderedDict
 from shoeMsgXml import *
 import re
 from lxml import etree
+from consoleLog import *
 
 class ShoeMsg():
     PORT            = 60006
@@ -37,30 +38,33 @@ class ShoeMsg():
     CONTENT_TYPE_VAL    = 'text/xml; charset="utf-8"'
     USER_AGENT_VAL      = 'LINUX UPnP/1.0 Denon-Heos/149200'
 
-    def __init__(self, host, path, method, urn, msgArgs={}, dbug=0):
+    def __init__(self, host, path, cmnd, urn, args=OrderedDict(), loglvl=0):
+
+        self.log=logging.getLogger(__name__)
+
         self.host=host
         self.path=path
-        self.method=method
+        self.cmnd=cmnd
         self.urn=urn
-        self.msgArgs=msgArgs
-        self.response=None
+        self.args=args
+        self.reply=None
 
-        self.dbug=dbug
+        self.loglvl=loglvl
 
         self._msgLen=0
         self._payload=None
         self._soapaction=None
-        self._httpResp=None
+        self._httpReply=None
 
         return
 
     def send(self):
-        shoexml = ShoeMsgXml(method=self.method,
+        shoexml = ShoeMsgXml(cmnd=self.cmnd,
                             urn=self.urn,
-                            msgArgs=self.msgArgs)
+                            args=self.args)
 
         self._payload = shoexml.genTree()
-        self._soapaction='"%s#%s"' % (self.urn, self.method)
+        self._soapaction='"%s#%s"' % (self.urn, self.cmnd)
         self._msgLen=str(len(self._payload))
 
         self._post_cmd()
@@ -68,42 +72,45 @@ class ShoeMsg():
         return
 
     def parse(self):
-        self.response=''
+        self.reply=''
 
-        if self.dbug > 0:
-            print("status", self._httpResp.status)
+        self.log.DEBUG("status", self._httpReply.status)
 
         try:
-            status = int(self._httpResp.status)
+            status = int(self._httpReply.status)
         except:
             raise ShoeMsgHttpRtnErr("Unknown")
 
         if(int(status) == 200):
             try:
-                self._payloadRtn=self._httpResp.read()
-                shoeMsgXml = ShoeMsgXml(xmlText=self._payloadRtn)
-                self.response=shoeMsgXml.parseTree()
+                self._payloadRtn=self._httpReply.read()
+                shoeMsgXml = ShoeMsgXml(msgXml=self._payloadRtn)
+                self.reply=shoeMsgXml.parseTree()
             except:
                 raise
         else:
             raise ShoeMsgHttpRtnErr(str(status))
 
-        if(self.urn != self.response.urn):
-            errMsg = "HTTP Rtn URN Mismatch %s %s" % (self.urn, self.response.urn)
+        if(self.urn != self.reply.urn):
+            errMsg = "HTTP Rtn URN Mismatch %s %s" % (self.urn, self.reply.urn)
             raise ShoeMsgHttpRtnErr(errMsg)
 
-        methodResp = self.method + "Response"
-        if(methodResp != self.response.method):
-            errMsg = "HTTP Rtn Method Mismatch %s %s" % (methodResp, self.response.method)
+        cmndReply = self.cmnd + "Response"
+        if(cmndReply != self.reply.cmnd):
+            errMsg = "HTTP Rtn Method Mismatch %s %s" % (cmndReply, self.reply.cmnd)
             raise ShoeMsgHttpRtnErr(errMsg)
 
-        return self.response
+        return self.reply
 
     def _post_cmd(self):
 
         conn = http.client.HTTPConnection(self.host, ShoeMsg.PORT)
 
-        conn.set_debuglevel(self.dbug)
+        if self.loglvl <= self.log.DEBUG:
+            conn.set_debuglevel(1)
+        else:
+            conn.set_debuglevel(0)
+
         conn.putrequest('POST', self.path, skip_host=True, skip_accept_encoding=True)
 
         host="%s:%s" % (self.host, ShoeMsg.PORT)
@@ -118,12 +125,12 @@ class ShoeMsg():
         try:
             conn.endheaders(self._payload)
         except Exception as e:
-            raise ShoeMsgHttpSendErr(str(e)) from e
+            raise ShoeMsgHttpSendErr("%s %s" % (str(e), host))
 
         try:
-            self._httpResp = conn.getresponse()
+            self._httpReply = conn.getresponse()
         except Exception as e:
-            raise ShoeMsgHttpRtnErr(str(e)) from e
+            raise ShoeMsgHttpSendErr("%s %s" % (str(e), host))
 
         conn.close()
 
@@ -137,232 +144,165 @@ class ShoeMsgHttpRtnErr(Exception):
 
 ##############################UNIT TESTS########################################
 from test_shoe import *
-
+from random import *
 class TestShoeMsg(TestShoeHttp):
+    #Set to 0 to do the long test.  Set to a number N>0 to itereate N
+    FAST_TEST=1
 
     def setUp(self):
         super().setUp()
-        self.shoeMsg=None
-        self.path=None
-        self.method=None
-        self.urn=None
-        self.msgArgs={}
 
         self.port=60006
         self.host='127.0.0.1'
-
+        self.testRootDev=TestRootDev()
+        self.testCmnds=self.testRootDev.cmnds
         return
 
     def _sendTestMsgs(self):
-        self.shoeMsg = ShoeMsg(self.host, self.path, self.method, self.urn, self.msgArgs, 10)
+        self.shoeMsg = ShoeMsg(self.host, self.path, self.cmnd, self.urn, self.args, 10)
         self.shoeMsg.send()
         self.shoeMsg.parse()
+        self._checkMsg(self.testCmnd)
         return
 
-class TestShoeMsgCreateGroup(TestShoeMsg):
-    def setUp(self):
-        super().setUp()
-        print("@@@@@@@@@@@@@@@@@@@@@@Test Create Group@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-        self.method='CreateGroup'
-
-        self.msgArgs=OrderedDict()
-        self.msgArgs['GroupFriendlyName']='Jam'
-        self.msgArgs['GroupMemberUUIDList']=\
-                'caf7916a94db1a1300800005cdfbb9c6,f3ddb59f3e691f1e00800005cdff1706'
-        self.msgArgs['GroupMemberChannelList']=''
-        self.path='/upnp/control/AiosServicesDvc/GroupControl'
-        self.urn='urn:schemas-denon-com:service:GroupControl:1'
-
-        self.testObj=self.testGroupCtrlSvc
-
-        self.path=self.testObj.urlPath
-        self.urn=self.testObj.urn
-
-        self.srvRxMsg=None
-        self.testRxMsg=self.testObj.createGroupCmndXml.encode('utf-8')
-
-        self.srvRxHdr=None
-        self.testRxHdr=self.testObj.createGroupHdr
-
+class TestShoeMsgCmnds(TestShoeMsg):
     def runTest(self):
-        self.postRtn=self.testObj.createGroupRtnXml
-        self.httpTest()
+        for testCmnd in self.testCmnds:
+            print("@@@@@@@@@@@@@@@@@@@@@@@ %s: Test %s @@@@@@@@@@@@@@@@@@@@@@@@@@@@@"\
+                    % (self.__class__.__name__, testCmnd.name))
+            self.httpTest(testCmnd)
+            print("@@@@@@@@@@@@@@@@@@@@@ %s: Test Done %s @@@@@@@@@@@@@@@@@@@@@@@@"\
+                    % (self.__class__.__name__, testCmnd.name))
 
-        self.assertEqual(self.shoeMsg.method, self.method, 'Parse error: method')
-        self.assertEqual(self.shoeMsg.urn, self.urn, 'Parse error: urn')
-        self.assertEqual(self.shoeMsg.msgArgs, self.msgArgs, 'Parse error: urn')
-
-        self.assertEqual(self.srvRxMsg, self.testRxMsg)
-        self.assertEqual(self.srvRxHdr, self.testRxHdr)
+            if self.FAST_TEST>0 and self.sendCnt > self.FAST_TEST:
+                    break
 
         return
 
-class TestShoeMsgBroken(TestShoeMsgCreateGroup):
-    def runTest(self):
-        self.testRes=self.TestResponse()
-        self.shoeMsg = ShoeMsg(self.host, self.path, self.method, self.urn, self.msgArgs, 10)
-        self.shoeMsg._httpResp=self.testRes
-        try:
-            self.shoeMsg.parse()
-        except etree.XMLSyntaxError:
-            pass
-        except:
-            raise
+    def _checkMsg(self, testCmnd):
+        self.assertEqual(self.shoeMsg.cmnd, testCmnd.name, 'Parse error: cmnd')
+        self.assertEqual(self.shoeMsg.urn, testCmnd.urn, 'Parse error: urn')
+        self.assertEqual(self.shoeMsg.args, testCmnd.args, 'Parse error: urn')
+        self.assertEqual(self.srvRxMsg, testCmnd.msg)
+        self.assertEqual(self.srvRxHdr, testCmnd.hdr)
+
+        reply=self.shoeMsg.reply
+
+        self.assertEqual(reply.cmnd, testCmnd.name + "Response", 'ParseErr: cmnd')
+        self.assertEqual(reply.urn, testCmnd.urn, 'ParseErr: urn')
+        self.assertDictEqual(reply.args, testCmnd.msgReplyArgs, 'Parse error: args\r %s \r %s' %
+                (reply.args, testCmnd.msgReplyArgs) )
 
         return
 
-    class TestResponse():
-        def __init__(self):
-            self.status=200
-
-        def read(self):
-            response=(
-                    's:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" '
-                    's:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">')
-
-            return response.encode('utf-8')
-
-class TestShoeMsgParse(TestShoeMsgCreateGroup):
-    def runTest(self):
-        self.method='CreateGroup'
-        self.msgArgs=OrderedDict()
-        self.msgArgs['GroupUUID']='17083c46d003001000800005cdfbb9c6'
-
-        responseTemp=(
-                '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" '
-                's:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">'
-                '<s:Body>'
-                '<u:%s xmlns:u="%s">'
-                '<%s>%s</%s>'
-                '</u:%s>'
-                '</s:Body>'
-                '</s:Envelope>')
-
-        response=responseTemp % (
-                self.method + "Response",
-                self.urn,
-                list(self.msgArgs.items())[0][0],
-                list(self.msgArgs.items())[0][1],
-                list(self.msgArgs.items())[0][0],
-                self.method + "Response")
-
-        self.shoeMsg = ShoeMsg(self.host, self.path, self.method, self.urn, self.msgArgs, 10)
-        self.shoeMsg._httpResp=self.TestResponse(response)
-        response = self.shoeMsg.parse()
-
-        self.assertEqual(response.method, self.method + "Response", 'ParseErr: method')
-        self.assertEqual(response.urn, self.urn, 'ParseErr: urn')
-        self.assertEqual(response.msgArgs, self.msgArgs, 'Parse error: args')
+class TestShoeMsgBroken(TestShoeMsgCmnds):
+    def _checkErr(self, e):
+        print("ERROR MESSAGE:", str(e))
+        if type(e) is not etree.XMLSyntaxError:
+            raise e
         return
 
-    class TestResponse():
-        def __init__(self, response):
-            self.status=200
-            self.response=response
-        def read(self):
-            return self.response.encode('utf-8')
+    def _modTestCmnd(self, testCmnd):
+        idx=randrange(len(testCmnd.rtnMsg)-5)
 
-class TestShoeMsgBadHost(TestShoeMsgCreateGroup):
+        testCmnd.rtnMsg=testCmnd.rtnMsg[0:idx]
+        return testCmnd
+
     def runTest(self):
+        for testCmnd in self.testCmnds:
+            print("@@@@@@@@@@@@@@@@@@@@@@@ %s: Test %s @@@@@@@@@@@@@@@@@@@@@@@@@@@@@"\
+                    % (self.__class__.__name__, testCmnd.name))
+            try:
+                self.httpTest(testCmnd)
+                raise ValueError("This should throw an error")
+            except Exception as e:
+                self._checkErr(e)
+
+            print("@@@@@@@@@@@@@@@@@@@@@ %s: Test Done %s @@@@@@@@@@@@@@@@@@@@@@@@"\
+                    % (self.__class__.__name__, testCmnd.name))
+
+            if self.FAST_TEST>0 and self.sendCnt > self.FAST_TEST:
+                 break
+
+        return
+
+class TestShoeMsgBadHost(TestShoeMsgBroken):
+    def _checkErr(self, e):
+        errMsg=str(e)
+        print("ERROR MESSAGE:", errMsg)
+        if type(e) is ShoeMsgHttpSendErr:
+            if(errMsg[:errMsg.find(']')+1] != "[Errno -2]"):
+                raise e
+        else:
+            raise e
+        return
+
+    def _modTestCmnd(self, testCmnd):
         self.host = 'ni.shrubbery'
-        try:
-            self.httpTest()
-            raise ValueError("This should throw an error")
+        return testCmnd
 
-        except ShoeMsgHttpSendErr as e:
-            errMsg = str(e)
-            print(errMsg)
-            if(errMsg[:errMsg.find(']')+1] == "[Errno -3]"):
-                pass
-            else:
-                raise
-        except:
-            raise
+class TestShoeMsgBadRequest(TestShoeMsgCmnds):
+    def _checkErr(self, e):
+        errMsg=str(e)
+        print("ERROR MESSAGE:", errMsg, type(e), self.errRtn)
+        if type(e) is ShoeMsgHttpRtnErr:
+            if(int(errMsg) != self.errRtn):
+                raise e
+        elif type(e) is ShoeMsgHttpSendErr:
+            pass
+        else:
+            raise e
+        return
+
+    def runTest(self):
+
+        rtnCodes=(400, 401, 403, 404, 405, 406, 407, 408, 409, 410, \
+                100, 101, 102, 103, \
+                201, 202, 203, 204, 205, 206, 207, 208, 226,\
+                300, 301, 302, 303, 304, 307, 308,\
+                411, 412, 413, 414, 415, 416, 417, 418, \
+                421, 422, 423, 425, 428, 429, 431, 451,\
+                500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511)
+
+        for rtnCode in rtnCodes:
+            self.errRtn=rtnCode
+            testCmnd=self.testCmnds[self.sendCnt%len(self.testCmnds)]
+            testCmnd.rtnCode=self.errRtn
+            try:
+                self.httpTest(testCmnd)
+            except Exception as e:
+                self._checkErr(e)
+
+            if self.FAST_TEST>0 and self.sendCnt > self.FAST_TEST:
+                 break
 
         return
 
-class TestShoeMsgBadRequest(TestShoeMsgCreateGroup):
-    def runTest(self):
-        self.rtnCode=400
-
-        try:
-            self.httpTest()
-            raise ValueError("This should throw an error")
-
-        except ShoeMsgHttpRtnErr as e:
-            if(str(e)=="400"):
-                pass
-            else:
-                raise
-        except:
-            raise
-
-        return
-
-class TestShoeMsgBadPort(TestShoeMsgCreateGroup):
-    def runTest(self):
-        self.srvPort=24242
-        try:
-            self.httpTest()
-            raise ValueError("This should throw an error")
-
-        except ShoeMsgHttpSendErr as e:
-            errMsg = str(e)
-            print(errMsg)
+class TestShoeMsgBadPort(TestShoeMsgBroken):
+    def _checkErr(self, e):
+        errMsg = str(e)
+        print(errMsg, type(e), self.srvPort)
+        if type(e) in (ShoeMsgHttpSendErr,):
             if(errMsg[:errMsg.find(']')+1] == "[Errno 111]"):
                 pass
-            else:
-                raise
-        except:
-            raise
-
+        else:
+            raise e
         return
 
-class TestShoeMsgNoReply(TestShoeMsgCreateGroup):
-    def runTest(self):
-        self.noResp=True
-        try:
-            self.httpTest()
-            raise ValueError("This should throw an error")
+    def _modTestCmnd(self, testCmnd):
+        self.srvPort=randrange(1024,65531)
+        return testCmnd
 
-        except ShoeMsgHttpRtnErr as e:
+class TestShoeMsgNoReply(TestShoeMsgBroken):
+    def _checkErr(self, e):
+        errMsg = str(e)
+        print(errMsg, type(e), self.srvPort)
+        if type(e) in (ShoeMsgHttpSendErr,):
             pass
-
-        except:
-            raise
-
+        else:
+            raise e
         return
 
-class TestShoeMsgActGetState(TestShoeMsg):
-
-    def runTest(self):
-        print("@@@@@@@@@@@@@@@@@Act Get State@@@@@@@@@@@@@@@@@@@@@@@@@")
-        self.testObj=self.testActSvc
-
-        self.method=self.testObj.getCurrStCmnd
-        self.msgArgs=OrderedDict()
-        self.urn=self.testObj.urn
-
-        self.testRxMsg=self.testObj.getCurrStCmndXml.encode('utf-8')
-        self.testRxHdr=self.testObj.getCurrStHdr
-        self.postRtn=self.testObj.getCurrStRtnXml
-
-        self.httpTest()
-
-        return
-
-class TestShoeMsgZoneGetState(TestShoeMsg):
-
-    def runTest(self):
-        print("@@@@@@@@@@@@@@@@@Zone Get State@@@@@@@@@@@@@@@@@@@@@@@@@")
-        self.testObj=self.testZoneCtrlSvc
-        self.method=self.testObj.getCurrStCmnd
-        self.msgArgs=OrderedDict()
-        self.urn=self.testObj.urn
-
-        self.testRxMsg=self.testObj.getCurrStCmndXml.encode('utf-8')
-        self.testRxHdr=self.testObj.getCurrStHdr
-        self.postRtn=self.testObj.getCurrStRtnXml
-
-        self.httpTest()
-        return
+    def _modTestCmnd(self, testCmnd):
+        testCmnd.noReply=True
+        return testCmnd

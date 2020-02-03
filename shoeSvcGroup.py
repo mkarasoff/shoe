@@ -30,11 +30,12 @@ class ShoeSvcGroup(ShoeSvc):
     DEV_NAME='AiosServices'
     NAME='GroupControl'
 
-    def __init__(self, host, dbug=0, port=60006):
+    def __init__(self, host, loglvl=0, port=60006):
         super().__init__(host=host,
                          devTag=self.DEV_NAME,
                          svcTag=self.NAME,
-                         dbug=dbug,
+                         loglvl=loglvl,
                          port=port)
+        self.log=ConsoleLog(self.__class__.__name__, loglvl)
 
         return

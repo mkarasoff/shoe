@@ -25,19 +25,18 @@
 ############################################################################
 from shoeSys import *
 from collections import OrderedDict
-from consoleLog import *
 
-class ShoeEvent(ShoeCfgXml):
+class ShoeEventParser(ShoeCfgXml):
 
     def __init__(self, xmlText='', loglvl=0):
         self.log=ConsoleLog(self.__class__.__name__, loglvl)
+
         self.xmlText=xmlText
+
+        self.loglvl=loglvl
         return
 
-    def getCfg(self, path=None):
-        return self.parse()
-
-    def parse(self):
+    def getCfg(self):
         try:
             self.xmlText=self.xmlText.encode('utf-8')
         except AttributeError:
@@ -83,7 +82,12 @@ class ShoeEvent(ShoeCfgXml):
         try:
             tree=etree.parse(BytesIO(eventText))
         except etree.XMLSyntaxError:
-            return eventText.decode()
+            try:
+                return eventText.decode()
+            except AttributeError:
+                return str(eventText)
+            except:
+                raise
         except:
             raise
 

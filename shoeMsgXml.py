@@ -28,6 +28,8 @@ from io import BytesIO
 from collections import OrderedDict
 from collections import namedtuple
 import re
+from lxml import etree
+from consoleLog import *
 
 class ShoeMsgXml():
     ENVELOPE_NS_URL=b'http://schemas.xmlsoap.org/soap/envelope/'
@@ -40,22 +42,24 @@ class ShoeMsgXml():
     BODY_INDEX = 0
     BODY_NS_TAG = 'u'
 
-    ShoeMsgParse = namedtuple('ShoeMsgParse', 'method urn msgArgs')
+    ShoeMsgParse = namedtuple('ShoeMsgParse', 'cmnd urn args')
 
-    def __init__(self, method='', urn='', msgArgs={}, xmlText=None, dbug=0):
-        self.method = method
+    def __init__(self, cmnd='', urn='', args={}, msgXml=None, loglvl=0):
+        self.log=ConsoleLog(self.__class__.__name__, loglvl)
+        self.cmnd = cmnd
         self.urn = urn
-        self.msgArgs = msgArgs
-        self.xmlTxt=xmlText
+        self.args = args
+        self.msgXml=msgXml
 
-        if(xmlText is not None):
-            self.setTree(xmlText)
+        if(msgXml is not None):
+            self.setTree(msgXml)
         else:
             self.xmlTree = None
 
-        self._msgArgsXML = None
+        self._argsXML = None
         return
 
+    #Note that this returns a utf-8 representation of the XML
     def genTree(self):
         self.xmlTree=self._genEnvelope()
         treeRoot=self.xmlTree.getroot()
@@ -63,14 +67,14 @@ class ShoeMsgXml():
         msgNsArg="{%s}" % self.urn
         msgNsmap= {ShoeMsgXml.BODY_NS_TAG : self.urn}
 
-        self._genBody(treeRoot, self.method, self.urn, self.msgArgs)
+        self._genBody(treeRoot, self.cmnd, self.urn, self.args)
 
-        self.xmlText=etree.tostring(treeRoot)
+        self.msgXml=etree.tostring(treeRoot)
 
-        return self.xmlText
+        return self.msgXml
 
     def parseTree(self):
-        self.msgArgs = OrderedDict()
+        self.args = OrderedDict()
 
         try:
             treeRoot=self.xmlTree.getroot()
@@ -87,16 +91,20 @@ class ShoeMsgXml():
         except:
             raise
 
-        self.method = re.sub('{[^}]+}', '', msgRoot.tag)
+        self.cmnd = re.sub('{[^}]+}', '', msgRoot.tag)
         self.urn = msgRoot.nsmap[ShoeMsgXml.BODY_NS_TAG]
 
         for element in msgRoot.iter():
-            self.msgArgs[element.tag] = element.text
+            #lxml
+            if element.text is not None:
+                self.args[element.tag] = element.text
+            else:
+                self.args[element.tag] = ''
 
         #Delete first item in list, it is the body header.
-        del self.msgArgs[list(self.msgArgs.items())[0][0]]
+        del self.args[list(self.args.items())[0][0]]
 
-        return ShoeMsgXml.ShoeMsgParse(self.method, self.urn, self.msgArgs)
+        return ShoeMsgXml.ShoeMsgParse(self.cmnd, self.urn, self.args)
 
     def setTree(self, xmlTxt=0):
         try:
@@ -120,7 +128,7 @@ class ShoeMsgXml():
 
         return envelope
 
-    def _genBody(self, treeRoot, method, urn, msgArgs={}):
+    def _genBody(self, treeRoot, cmnd, urn, args={}):
 
         msgNsArg="{%s}" % urn
         msgNsmap= {ShoeMsgXml.BODY_NS_TAG : urn}
@@ -129,11 +137,11 @@ class ShoeMsgXml():
 
         bodyTree=etree.SubElement(
                 bodyRoot,
-                msgNsArg + method,
+                msgNsArg + cmnd,
                 nsmap=msgNsmap)
         bodyTree.text=''
 
-        for tag, tagText in list(msgArgs.items()):
+        for tag, tagText in list(args.items()):
             msgElement=etree.SubElement(
                     bodyTree,
                     str(tag))
@@ -148,86 +156,54 @@ from test_shoe import *
 
 class TestShoeMsgXml(unittest.TestCase):
     def setUp(self):
+        rootDev=TestRootDev()
+        self.testCmnds=rootDev.cmnds
 
-        self.method='SetGroupMemberChannel'
-        self.urn='urn:schemas-denon-com:service:GroupControl:1'
+    def genMsg(self, cmnd):
+        cmndMsg=cmnd.msg.encode('utf-8')
 
-        self.msgArgs=OrderedDict()
-        self.msgArgs['GroupUUID']='17083c46d003001000800005cdfbb9c6'
-        self.msgArgs['AudioChannel']='LEFT'
-
-        xmlText=('<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" '
-                   's:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">'
-                 '<s:Body>'
-                 '<u:%s xmlns:u="%s">'
-                 '<%s>%s</%s>'
-                 '<%s>%s</%s>'
-                 '</u:%s>'
-                 '</s:Body>'
-                 '</s:Envelope>')
-
-        self.xmlText=xmlText % (self.method, self.urn,
-                   list(self.msgArgs.items())[0][0],
-                   list(self.msgArgs.items())[0][1],
-                   list(self.msgArgs.items())[0][0],
-                   list(self.msgArgs.items())[1][0],
-                   list(self.msgArgs.items())[1][1],
-                   list(self.msgArgs.items())[1][0],
-                   self.method)
-
-        self.xmlText=self.xmlText.encode('utf-8')
-
-    def genXml(self):
-
-        shoeXml = ShoeMsgXml(method=self.method, urn=self.urn, msgArgs=self.msgArgs)
+        shoeXml = ShoeMsgXml(cmnd=cmnd.name, urn=cmnd.urn, args=cmnd.args)
         textRtn = shoeXml.genTree()
 
         print(' ')
         print('Gen: ')
-        print('Gen Text:', shoeXml.xmlText)
-        print('Cmp Text:', self.xmlText)
+        print('Gen Text:', shoeXml.msgXml)
+        print('Cmp Text:', cmndMsg)
 
-        self.assertEqual(shoeXml.xmlText, self.xmlText, 'GenError: xmlTree')
-        self.assertEqual(textRtn, self.xmlText, 'GenErrorRtn: xmlTree')
+        self.assertEqual(shoeXml.msgXml, cmndMsg, 'GenError: xmlTree')
+        self.assertEqual(textRtn, cmndMsg, 'GenErrorRtn: xmlTree')
         return
 
-class TestShoeMsgParse(TestShoeMsgXml):
-    def runTest(self):
-        shoeXml  = ShoeMsgXml(xmlText=self.xmlText)
+    def parseMsg(self, cmnd):
+        cmndMsg=cmnd.msg.encode('utf-8')
+
+        shoeXml  = ShoeMsgXml(msgXml=cmndMsg)
         parseRtn = shoeXml.parseTree()
 
         print(' ')
         print('Parse: ')
-        print('Method: ', shoeXml.method, 'Method Expected: ', self.method)
-        print('URN: ', shoeXml.urn, 'URN Expected: ', self.urn)
-        print('ARGs: ', shoeXml.msgArgs, 'ARGs Expected: ', self.msgArgs)
+        print('Cmnd: ', shoeXml.cmnd, 'Cmnd Expected: ', cmnd.name)
+        print('URN: ', shoeXml.urn, 'URN Expected: ', cmnd.urn)
+        print('ARGs         : ', shoeXml.args)
+        print('ARGs Expected: ', cmnd.args)
 
-        self.assertEqual(shoeXml.method, self.method, 'Parse error: method')
-        self.assertEqual(shoeXml.urn, self.urn, 'Parse error: urn')
-        self.assertEqual(shoeXml.msgArgs, self.msgArgs, 'Parse error: mesgDataArgs')
+        self.assertEqual(shoeXml.cmnd, cmnd.name, 'Parse error: cmnd')
+        self.assertEqual(shoeXml.urn, cmnd.urn, 'Parse error: urn')
 
-        self.assertEqual(parseRtn.method, self.method, 'Parse error rtn: method')
-        self.assertEqual(parseRtn.urn, self.urn, 'Parse error rtn: urn')
-        self.assertEqual(parseRtn.msgArgs, self.msgArgs, 'Parse error rtn: mesgDataArgs')
+        self.assertEqual(shoeXml.args, cmnd.args, 'Parse error: mesgDataArgs')
 
+        self.assertEqual(parseRtn.cmnd, cmnd.name, 'Parse error rtn: cmnd')
+        self.assertEqual(parseRtn.urn, cmnd.urn, 'Parse error rtn: urn')
+        self.assertEqual(parseRtn.args, cmnd.args, 'Parse error rtn: mesgDataArgs')
+
+class TestShoeMsgParse(TestShoeMsgXml):
+    def runTest(self):
+        for testCmnd in self.testCmnds:
+            self.parseMsg(testCmnd)
         return
 
 class TestShoeMsgXmlGen(TestShoeMsgXml):
     def runTest(self):
-        self.genXml()
-        return
-
-class TestShoeMsgXmlGenMt(TestShoeMsgXml):
-    def runTest(self):
-        self.testObj=TestZoneCtrlSvc()
-
-        self.method=self.testObj.getCurrStCmnd
-        self.msgArgs=OrderedDict()
-        self.path=self.testObj.urlPath
-        self.urn=self.testObj.urn
-
-        self.xmlText=self.testObj.getCurrStCmndXml.encode('utf-8')
-
-        self.genXml()
-
+        for testCmnd in self.testCmnds:
+            self.genMsg(testCmnd)
         return

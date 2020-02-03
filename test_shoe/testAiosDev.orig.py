@@ -37,8 +37,6 @@ class TestAiosDev(ShoeTestXml):
 
         super(TestAiosDev, self).__init__(xmlFile, md5hex)
 
-        name='Kitchen'
-
         zoneCtrlSvc={'controlURL': '/upnp/control/AiosServicesDvc/ZoneControl', \
                      'serviceType': 'urn:schemas-denon-com:service:ZoneControl:2', \
                      'serviceId': 'urn:denon-com:serviceId:ZoneControl', \
@@ -70,7 +68,6 @@ class TestAiosDev(ShoeTestXml):
         self.act['udn']='uuid:ea6e8d44-2442-11ea-978f-2e728ce88125'
         self.act['uuid']='ea6e8d44244211ea978f2e728ce88125'
         self.act['svc']=actSvc
-        self.act['sysName']=name
 
         self.act['info']={'manufacturerURL': 'http://www.denon.com', \
                 'modelName': 'HEOS 1', \
@@ -100,7 +97,6 @@ class TestAiosDev(ShoeTestXml):
         self.aios['name']='AiosServices'
         self.aios['udn']='uuid:ea6e8c04-2442-11ea-978f-2e728ce88125'
         self.aios['uuid']='ea6e8c04244211ea978f2e728ce88125'
-        self.aios['sysName']=name
         self.aios['dev']={'manufacturerURL': 'http://www.denon.com',\
                 'serviceList': {'service': [\
                     {'controlURL': '/upnp/control/AiosServicesDvc/ErrorHandler', \
@@ -123,7 +119,6 @@ class TestAiosDev(ShoeTestXml):
         self.zoneCtrl['svc']=zoneCtrlSvc
 
         self.mediaSrv={}
-        self.mediaSrv['sysName']=name
         self.mediaSrv['dev']={'manufacturerURL': 'http://www.denon.com',\
                 'serviceList': {'service': [\
                     {'controlURL': '/upnp/control/ams_dvc/ContentDirectory', \
@@ -149,7 +144,6 @@ class TestAiosDev(ShoeTestXml):
                     'X_VirtualServersSupported'): 'True'}
 
         self.renderer={}
-        self.renderer['sysName']=name
         self.renderer['dev']={'manufacturerURL': 'http://www.denon.com',\
                 'serviceList': {'service': [\
                     {'controlURL': '/upnp/control/renderer_dvc/AVTransport', \
@@ -186,7 +180,7 @@ class TestAiosDev(ShoeTestXml):
                 'serialNumber': 'ACJG9876543210', \
                 'modelNumber': 'DWS-1000 4.0', \
                 'deviceType': 'urn:schemas-denon-com:device:AiosDevice:1', \
-                'friendlyName': name, \
+                'friendlyName': 'Kitchen', \
                 'UDN': 'uuid:ea6e883a-2442-11ea-978f-2e728ce88125',\
                 'manufacturer': 'Denon'},\
                 'specVersion': \

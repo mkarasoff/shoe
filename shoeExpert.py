@@ -26,19 +26,19 @@
 from shoeOp import *
 
 class ShoeExpert(ShoeOp):
-    def __init__(self, shoeSys, dbug=0):
-        super().__init__(shoeSys)
+    def __init__(self, shoeSys, loglvl=0):
+        super().__init__(shoeSys, loglvl)
+        self.log=ConsoleLog(self.__class__.__name__, loglvl)
         return
 
     def getCmnds(self):
         svcCmnds=self.shoeSys.getCmnds()
 
         for svcName, cmnds in svcCmnds.items():
-            print("Device: ", svcName)
-            print("--------------------")
+            self.log.debug("Device: ", svcName)
             for cmndName in cmnds:
                 if len(self.shoeSys.findDev()) > 1:
                     cmndName="%s.%s" % (svcName, cmndName)
-                print("  ",cmndName)
-            print("\r\r")
+                self.log.debug("  ",cmndName)
+            self.log.debug("\r\r")
         return

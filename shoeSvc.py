@@ -28,24 +28,38 @@
 ############################################################################
 from shoeDev import *
 import copy
+from consoleLog import *
 
 class ShoeSvc(ShoeDev):
     ACTTBL_KEYS=('scpd','actionList','action')
     STATEVARTBL_KEYS=('scpd','serviceStateTable','stateVariable')
     ARGLIST_KEYS=('argumentList','argument')
+    SVC_LIST_KEYS=('serviceList', 'service')
     NAME_KEY='name'
     STATEVAR_KEY='relatedStateVariable'
+    SCPD_URL_KEY='SCPDURL'
+    SVCNAME_KEY='serviceId'
+    SVCNAME_TAG='serviceId'
 
-    URL_KEY='SCPDURL'
+    PATH_KEY='controlURL'
+    URI_KEY='serviceType'
 
-    def __init__(self, host, svcCfg, devObj, dbug=0, port=60006, scpdCfg=None):
+    def __init__(self,
+                    host,
+                    svcCfg,
+                    devInst=None,
+                    loglvl=0,
+                    port=60006,
+                    scpdCfg=None):
+
         super().__init__(host=host,
-                         devTag=devTag,
-                         dbug=dbug,
-                         port=port)
+                        port=port,
+                        loglvl=loglvl)
+
+        self.log=ConsoleLog(self.__class__.__name__, loglvl)
 
         self.cfg=svcCfg
-        self._devObj=devObj
+        self._devInst=devInst
 
         self.devName=None
 
@@ -53,78 +67,52 @@ class ShoeSvc(ShoeDev):
         self._stateVarTbl=None
         self._cmndTbl=None
 
+        self.path=None
+        self.uri=None
+
+        self.name=None
         return
 
     def init(self):
-        self.devName=self._devObj.name
+        if self._devInst is not None:
+            self.devName=self._devInst.name
 
-        try:
-            self.name= self._getName()
-        except ShoeDevUnkownParam as e:
-            print("WARNING: Svc Name not found, setting to 'None'")
-            if dbug > 0:
-                print(str(e))
-            self.name = None
-        except:
-            raise
+        self.path=self.cfg[self.PATH_KEY]
+        self.uri=self.cfg[self.URI_KEY]
+        self.name= self._getName(self.cfg)
 
         try:
             if self._scpd is None:
                 self._scpd=self._getScpd(self.cfg)
         except KeyError as e:
-            print("INFO: No SCPD for this service", self.name)
-            if dbug > 0:
-                print(str(e))
+            log.info("No SCPD for this service", self.name)
+            log.debug(str(e))
             raise ShoeSvcNoScpd(errStr)
         except:
             raise
 
         try:
-            self._stateVarTbl=self._getStateVarTbl(self.scpd)
+            self._stateVarTbl=self._getStateVarTbl(self._scpd)
         except ShoeSvcNoTbl:
             self._stateVarTbl={}
-            if dbug > 0:
-                print("INFO: No var table for service", self.name)
+            log.info("No var table for service", self.name)
         except:
             raise
 
         try:
-            self._cmndTbl=self._getCmndTbl(self.scpd)
+            self._cmndTbl=self._getCmndTbl(self._scpd)
         except ShoeSvcNoTbl:
             self._cmndTbl={}
-            if dbug > 0:
-                print("INFO: No cmnd table for service", self.name)
+            log.info("No cmnd table for service", self.name)
         except:
             raise
 
         return
 
-    def _getScpd(self, svcCfg):
-        try:
-            path=svcCfg[self.URL_KEY]
-        except KeyError:
-            raise ShoeSvcNoScpd(errStr)
-        except:
-            raise
-
-        try:
-            scpd=self.getCfg(path)
-        except:
-            errStr="Service %s has no SCPD" % self.name
-            raise ShoeSvcNoScpd(errStr)
-
-        return scpd
-
-    def _getName(self,
-                cfg=self.cfg,
-                typeIdKey=self.SVCNAME_KEY,
-                typeIdTag=self.SVCNAME_TAG ):
-        return super()._getName(cfg, typeIdKey, typeIdTag)
-
     @property
-    def cmndList(self):
+    def cmnds(self):
         if self._cmndTbl is None:
-            raise ShoeSvcErr("uninitialized")
+            raise ShoeSvcNoTbl("Service not properly initialized")
         else:
             return list(self._cmndTbl.keys())
 
@@ -161,6 +149,48 @@ class ShoeSvc(ShoeDev):
             cmndArgCfg.append(cmndStateVar)
 
         return cmndArgCfg
+
+    def sendCmnd(self, cmnd, args={}):
+        argsCfg=self.getCmndArgsCfg(cmnd)
+
+        shoeCmnd=ShoeCmnd(  host=self.host,
+                            path=self.path,
+                            urn=self.urn,
+                            port=self.port,
+
+                            cmnd=cmnd,
+                            args=args,
+                            argsCfg=argsCfg,
+
+                            loglvl=self.loglvl)
+
+        shoeCmnd.send()
+        return shoeCmnd.parse()
+
+    def _getScpd(self, svcCfg):
+        try:
+            path=svcCfg[self.SCPD_URL_KEY]
+        except KeyError:
+            raise ShoeSvcNoScpd(errStr)
+        except:
+            raise
+
+        try:
+            scpd=self.getCfg(path)
+        except:
+            errStr="Service %s has no SCPD" % self.name
+            raise ShoeSvcNoScpd(errStr)
+
+        return scpd
+
+    def _getName(self,
+                cfg,
+                typeIdKey=SVCNAME_KEY,
+                typeIdTag=SVCNAME_TAG ):
+
+        self.log.debug(cfg)
+
+        return super()._getName(cfg, typeIdKey, typeIdTag)
 
     def _getStateVarTbl(self, scpd):
         stateVarTbl={}
@@ -217,7 +247,6 @@ class ShoeSvc(ShoeDev):
     #This should do nothing
     def _initSvcs(self):
         return
-
 ###############################Exceptions#################################
 class ShoeSvcErr(Exception):
     pass
@@ -231,70 +260,99 @@ class ShoeSvcNoTbl(Exception):
 ###############################Unittests#################################
 import unittest
 from test_shoe import *
-
-class TestShoeSvc(unittest.TestCase):
-    GROUP_DEV_TAG='AiosServices'
-    GROUP_SVC_TAG='GroupControl'
-
+class TestShoeGroupCtrlSvc(TestShoeHttp):
     HOST='127.0.0.1'
-
     def setUp(self):
-      return
+        super().setUp()
+        self.shoeMsg=None
+        self.path=None
+        self.method=None
+        self.urn=None
+        self.msgArgs={}
+
+        self.port=60006
+        self.host='127.0.0.1'
+
+        self.cfg=False
+
+        return
+
+    def _sendTestMsgs(self):
+        if self.cfg is False:
+            self.shoeSvc.init()
+        return
 
     def runTest(self):
+        self._runSvcTest(self.testAiosDev.groupCtrlSvc, self.testGroupCtrlSvc)
 
-        testObj=TestGroupCtrlSvc()
-        self.xmlStr=testObj.xmlStr
-
-        self.shoeSvc=ShoeSvc(self.HOST,
-                    self.GROUP_DEV_TAG,
-                    self.GROUP_SVC_TAG,
-                    dbug=10)
-
-        self.shoeSvc._getXmlText=self._getXmlText
-
-        self.shoeSvc.initSvc()
-
-        print("@@@@@@@@@@@@@@@@@@Group Arg St Table@@@@@@@@@@@@@@@@@@@@@@@")
-        print(self.shoeSvc._stateVarTbl)
-
-        self.assertEqual(self.shoeSvc._stateVarTbl,
-                        testObj._stateVarTbl,
-                        "Arg State Table")
-
-        print("@@@@@@@@@@@@@@@@@@Group Ctrl Command Table@@@@@@@@@@@@@@@@@@@")
-        print(self.shoeSvc._cmndTbl)
-        self.assertEqual(self.shoeSvc._cmndTbl,
-                        testObj._cmndTbl,
-                        "Command Table")
-
-        print("@@@@@@@@@@@@@@@@@Group Ctrl Command List@@@@@@@@@@@@@@@@@@@@@@@")
-        print(self.shoeSvc.cmndList)
-        self.assertCountEqual(self.shoeSvc.cmndList,
-                        testObj.cmndList,
-                        "Command List")
-
-        getGroupVolArg=self.shoeSvc.getCmndArgsCfg(testObj.getGroupVolCmnd)
+        getGroupVolArg=self.shoeSvc.getCmndArgsCfg(self.testGroupCtrlSvc.getGroupVolCmnd)
 
         print("@@@@@@@@@@@@@@@@@@@Args for Get Group Vol Cmd@@@@@@@@@@@@@@@@@@@")
         print(getGroupVolArg)
 
         self.assertEqual(getGroupVolArg,
-                        testObj.getGroupVolArg,
+                        self.testGroupCtrlSvc.getGroupVolArg,
                         "Get Group Volume Args")
-
         return
 
-    def _getXmlText(self):
-        print("@@@@@@@@@@@@@@@@@@Shoe Cfg Scpd Path@@@@@@@@@@@@@@@@@@@@")
-        print(self.shoeSvc.path)
+    def _runSvcTest(self, svcCfg, testSvc):
+        class testDev():
+            def __init__(self):
+                self.name=testSvc.devName
+                return
 
-        if(self.shoeSvc.path ==
-                '/upnp/desc/aios_device/aios_device.xml'):
-            aiosDevObj=TestAiosDev()
-            xmlStr=aiosDevObj.xmlStr
+        devInst=testDev()
 
-        else:
-            xmlStr=self.xmlStr
+        self.shoeSvc=ShoeSvc(host=self.HOST,
+                            svcCfg=svcCfg,
+                            devInst=devInst)
 
-        return xmlStr
+        shoeSvc=self.shoeSvc
+
+        self.httpTest()
+
+        msg="@@@@@@@@@@@@@@@@@@%s Arg St Table@@@@@@@@@@@@@@@@@@@@@@@" % testSvc.name
+        print(msg)
+        print(shoeSvc._stateVarTbl)
+
+        self.assertEqual(shoeSvc._stateVarTbl,
+                        testSvc._stateVarTbl,
+                        "Arg State Table")
+
+        msg="@@@@@@@@@@@@@@@@@@%s Command Table@@@@@@@@@@@@@@@@@@@@@@@" % testSvc.name
+        print(msg)
+        print(self.shoeSvc._cmndTbl)
+        self.assertEqual(shoeSvc._cmndTbl,
+                        testSvc._cmndTbl,
+                        "Command Table")
+
+        msg="@@@@@@@@@@@@@@@@@@%s Command List@@@@@@@@@@@@@@@@@@@@@@@" % testSvc.name
+        print(msg)
+        print(self.shoeSvc.cmnds)
+        self.assertCountEqual(self.shoeSvc.cmnds,
+                        testSvc.cmnds,
+                        "Command List")
+
+        msg="@@@@@@@@@@@@@@@@@@%s Name@@@@@@@@@@@@@@@@@@@@@@@" % testSvc.name
+        print(msg)
+        print(self.shoeSvc.name)
+        self.assertCountEqual(self.shoeSvc.name,
+                        testSvc.name,
+                        "Name")
+
+        msg="@@@@@@@@@@@@@@@@@@%s Dev Name@@@@@@@@@@@@@@@@@@@@@@@" % testSvc.name
+        print(msg)
+        print(self.shoeSvc.devName)
+        self.assertCountEqual(self.shoeSvc.devName,
+                        testSvc.devName,
+                        "Dev Name")
+
+class TestShoeZoneCtrlSvc(TestShoeGroupCtrlSvc):
+    def runTest(self):
+        self._runSvcTest(self.testAiosDev.zoneCtrlSvc, self.testZoneCtrlSvc)
+        return
+
+class TestShoeActSvc(TestShoeGroupCtrlSvc):
+    def runTest(self):
+        self._runSvcTest(self.testAiosDev.actSvc, self.testActSvc)
+        return

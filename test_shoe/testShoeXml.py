@@ -27,16 +27,10 @@
 from hashlib import md5
 from collections import OrderedDict
 
-class ShoeTestXml(object):
-    def __init__(self, xmlFile, md5hex=None, testPath='test_shoe/'):
+class TestShoeXml(object):
+    def __init__(self, xmlFile, md5hex=None, testPath='test_shoe/xml_files/'):
         self.testPath=testPath
         self.xmlFile=xmlFile
-        self.xmlDict=None
-
-        self.xmlRtnHead='<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" '\
-                            's:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body>'
-
-        self.xmlRtnTail='</s:Body></s:Envelope>'
 
         if (md5hex is not None):
             self._checkTestFile(md5hex)

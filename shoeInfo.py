@@ -29,9 +29,9 @@ class ShoeInfo(ShoeOp):
     ACT_FNAME_KEY='friendlyName'
     SVC_NAME_KEY='serviceName'
 
-    def __init__(self, shoeSys, dbug=0):
-        super().__init__(shoeSys)
-
+    def __init__(self, shoeSys, loglvl=0):
+        self.log=ConsoleLog(self.__class__.__name__, loglvl)
+        super().__init__(shoeSys, loglvl)
         return
 
     def getInfo(self, extend=False):
@@ -60,8 +60,8 @@ class TestShoeInfo(TestShoeHttp):
         self.port=60006
         self.host='127.0.0.1'
         self.svcName=None
-        self.shoeSys=ShoeSys(self.host, dbug=2)
-        self.info=ShoeInfo(self.shoeSys, dbug=2)
+        self.shoeSys=ShoeSys(self.host, loglvl=logging.DEBUG)
+        self.info=ShoeInfo(self.shoeSys, loglvl=logging.DEBUG)
         self.cfg=False
         self.httpHandler=TestShoeCurrStHttpHandler
         #This should run get_cfg()
