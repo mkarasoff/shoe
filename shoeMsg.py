@@ -29,7 +29,7 @@ from collections import OrderedDict
 from shoeMsgXml import *
 import re
 from lxml import etree
-from consoleLog import *
+from console_log import *
 
 class ShoeMsg():
     PORT            = 60006
@@ -38,9 +38,15 @@ class ShoeMsg():
     CONTENT_TYPE_VAL    = 'text/xml; charset="utf-8"'
     USER_AGENT_VAL      = 'LINUX UPnP/1.0 Denon-Heos/149200'
 
-    def __init__(self, host, path, cmnd, urn, args=OrderedDict(), loglvl=0):
+    def __init__(self,
+                    host,
+                    path,
+                    cmnd,
+                    urn,
+                    args=OrderedDict(),
+                    loglvl=ConsoleLog.WARNING):
 
-        self.log=logging.getLogger(__name__)
+        self.log=ConsoleLog(self.__class__.__name__, loglvl)
 
         self.host=host
         self.path=path
@@ -74,7 +80,7 @@ class ShoeMsg():
     def parse(self):
         self.reply=''
 
-        self.log.DEBUG("status", self._httpReply.status)
+        self.log.debug("status %s" % self._httpReply.status)
 
         try:
             status = int(self._httpReply.status)
@@ -231,7 +237,8 @@ class TestShoeMsgBadHost(TestShoeMsgBroken):
         errMsg=str(e)
         print("ERROR MESSAGE:", errMsg)
         if type(e) is ShoeMsgHttpSendErr:
-            if(errMsg[:errMsg.find(']')+1] != "[Errno -2]"):
+            errStr=errMsg[:errMsg.find(']')+1]
+            if(errStr != "[Errno -2]" and errStr != "[Errno -3]"):
                 raise e
         else:
             raise e

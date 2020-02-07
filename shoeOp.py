@@ -24,7 +24,7 @@
 #
 ############################################################################
 from shoeState import *
-from consoleLog import *
+from console_log import *
 
 class ShoeOp():
     CURRSTATE_CMND='GetCurrentState'

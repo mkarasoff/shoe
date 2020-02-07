@@ -28,15 +28,14 @@ from collections import OrderedDict
 
 class ShoeEventParser(ShoeCfgXml):
 
-    def __init__(self, xmlText='', loglvl=0):
-        self.log=ConsoleLog(self.__class__.__name__, loglvl)
+    def __init__(self, xmlText='', loglvl=ConsoleLog.WARNING):
+        super().__init__(loglvl=loglvl)
 
         self.xmlText=xmlText
-
         self.loglvl=loglvl
         return
 
-    def getCfg(self):
+    def parse(self):
         try:
             self.xmlText=self.xmlText.encode('utf-8')
         except AttributeError:
@@ -49,7 +48,7 @@ class ShoeEventParser(ShoeCfgXml):
 
         self.xmlDict = self._getXmlDict(self.xmlText)
 
-        return self.xmlDict()
+        return self.xmlDict
 
     def _getXmlDict(self, xmlText):
 
@@ -96,7 +95,7 @@ class ShoeEventParser(ShoeCfgXml):
 
         return rtnVal
 
-    def _getHttp(self):
+    def _getHttp(self, path, host, port):
         return None
 
     def _unEscape(self, xmlStr):
@@ -109,29 +108,27 @@ class ShoeEventParser(ShoeCfgXml):
 from test_shoe import *
 class TestShoeEvent(unittest.TestCase):
     def setUp(self):
-        self.testSvc=TestActSvc()
+        self.testSvcs=[ TestActSvc(), TestGroupCtrlSvc(), TestZoneCtrlSvc()]
         return
 
     def runTest(self):
-        currStRtnTxt=self.testSvc.getCurrStRtn['CurrentState']
+        shoeCfg=ShoeCfgXml()
 
-        print("CurrStRtnTxt", currStRtnTxt)
+        for svc in self.testSvcs:
+            cmnd = svc.cmnds['GetCurrentState']
+            rtnMsgBody = cmnd.rtnMsgBody
+            xmlTextRoot = shoeCfg._parseXml(rtnMsgBody.encode('utf-8'))
+            currStRtn=shoeCfg._etreeToDict(xmlTextRoot)
 
-        shoeSt=ShoeEvent(
-                xmlText=currStRtnTxt,
+            shoeSt=ShoeEventParser(
+                xmlText=currStRtn['CurrentState'],
                 loglvl=logging.DEBUG)
 
-        currSt=shoeSt.getCfg()
+            currSt=shoeSt.parse()
 
-        self.assertCountEqual(currSt,
-                self.testSvc.currSt)
+            print(svc.name)
+            print("curr st returned", currSt)
+            print("curr st expected", cmnd.rtn['CurrentState'])
 
+            self.assertCountEqual(cmnd.rtn['CurrentState'], currSt)
         return
-
-class TestShoeEventGroup(TestShoeEvent):
-    def setUp(self):
-        self.testSvc=TestGroupCtrlSvc()
-
-class TestShoeEventZone(TestShoeEvent):
-    def setUp(self):
-        self.testSvc=TestZoneCtrlSvc()

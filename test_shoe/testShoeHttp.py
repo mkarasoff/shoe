@@ -129,13 +129,13 @@ class TestShoeHttp(unittest.TestCase):
             if self.getRtn:
                 rtnMsg=self.getRtn
 
-            elif reqPath == testActSvc.url:
+            elif reqPath == testActSvc.scpdPath:
                 rtnMsg=testActSvc.xmlStr
 
-            elif reqPath == testGroupCtrlSvc.url:
+            elif reqPath == testGroupCtrlSvc.scpdPath:
                 rtnMsg=testGroupCtrlSvc.xmlStr
 
-            elif reqPath == testZoneCtrlSvc.url:
+            elif reqPath == testZoneCtrlSvc.scpdPath:
                 rtnMsg=testZoneCtrlSvc.xmlStr
 
             elif reqPath == testRootDev.url:

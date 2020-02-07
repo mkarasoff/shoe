@@ -29,7 +29,13 @@ from .testActDev import *
 from collections import OrderedDict
 
 class TestActSvc(TestShoeSvc):
-    def __init__(self, devName, svcCfg):
+    CFG={'controlURL': '/ACT/control', \
+                    'serviceType': 'urn:schemas-denon-com:service:ACT:1', \
+                    'serviceId': 'urn:denon-com:serviceId:ACT', \
+                    'eventSubURL': '/ACT/event',\
+                    'SCPDURL': '/ACT/SCPD.xml'}
+
+    def __init__(self, devName='ACT-Denon', svcCfg=CFG):
         super().__init__(  xmlFile='SCPD.xml',
                         md5hex='ff2c1a651e8c18e28ae77a2fe2632994',
                         devName=devName,
@@ -104,7 +110,7 @@ class TestActSvc(TestShoeSvc):
                 {'relatedStateVariable': 'ARG_NetworkConfiguration', 'direction': 'out', 'name': 'networkConfiguration',\
                     'state': {'dataType': 'string', '@sendEvents': 'no', 'name': 'ARG_NetworkConfiguration'}}]
 
-        cmnd.args=OrderedDict([('networkConfiguration', '1'),])
+        cmnd.args=OrderedDict([('networkConfigurationId', '1'),])
         cmnd.rtn=OrderedDict([('networkConfiguration', '1'),])
         self.cmnds[cmnd.name]=cmnd
 

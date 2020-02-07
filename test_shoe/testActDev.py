@@ -26,13 +26,7 @@ from .testActSvc import *
 from .testShoeDev import *
 
 class TestActDev(TestShoeDev):
-    ACT_SVC_CFG={'controlURL': '/ACT/control', \
-                    'serviceType': 'urn:schemas-denon-com:service:ACT:1', \
-                    'serviceId': 'urn:denon-com:serviceId:ACT', \
-                    'eventSubURL': '/ACT/event',\
-                    'SCPDURL': '/ACT/SCPD.xml'}
-
-    DEV_CFG={'manufacturerURL': 'http://www.denon.com', \
+    CFG={'manufacturerURL': 'http://www.denon.com', \
                 'modelName': 'HEOS 1', \
                 'lanMac': '00:05:CD:00:00:01', \
                 'locale': 'en_NA',\
@@ -51,18 +45,18 @@ class TestActDev(TestShoeDev):
                 'UDN': 'uuid:ea6e8d44-2442-11ea-978f-2e728ce88125',\
                 'moduleType': 'Aios 4.0', \
                 'DeviceID': 'AIOS:0001',
-                'serviceList' : {'service': ACT_SVC_CFG}}
+                'serviceList' : {'service': TestActSvc.CFG}}
 
     NAME='ACT-Denon'
 
     def __init__(self):
 
         super().__init__(name=self.NAME,
-                         udn=self.DEV_CFG['UDN'],
-                         urn=self.DEV_CFG['deviceType'],
-                         cfg=self.DEV_CFG)
+                         udn=self.CFG['UDN'],
+                         urn=self.CFG['deviceType'],
+                         cfg=self.CFG)
 
-        self.svcs={'ACT' : TestActSvc(self.name, self.ACT_SVC_CFG)}
+        self.svcs={'ACT' : TestActSvc(self.name)}
 
         self.infoFmt=\
             "deviceType       : urn:schemas-denon-com:device:ACT-Denon:1\n"\

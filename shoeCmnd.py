@@ -26,33 +26,28 @@
 from shoeSvcAct import *
 from shoeSvcGroup import *
 from shoeSvcZone import *
-from shoeCmnd import *
+from shoeMsg import *
+from shoeEventParser import *
 from collections import OrderedDict
 import copy
 import sys
 from collections import defaultdict
-from consoleLog import *
 
 class ShoeCmnd(ShoeMsg):
     def __init__(self,
                 host, path, urn,
                 cmnd, argsIn=OrderedDict(), argsCfg=None,
                 port=60006,
-                loglvl=0
-                ):
+                loglvl=None):
 
-        super.__init__(host=host,
+        super().__init__(host=host,
                         path=path,
                         cmnd=cmnd,
-                        urn=urn)
+                        urn=urn,
+                        loglvl=loglvl)
 
-        self.log=ConsoleLog(self.__class__.__name__, loglvl)
-
-        self.cmnd = cmnd
         self.argsIn = argsIn
         self.argsCfg = argsCfg
-
-        self.loglvl = loglvl
         self.cmndReply=None
         return
 
@@ -62,32 +57,41 @@ class ShoeCmnd(ShoeMsg):
         return
 
     def parse(self):
-        msgReply = super.parse()
+        msgReply = super().parse()
 
         replyArgs=self._formatReply(msgReply.args, self.argsCfg)
 
-        self.cmndReply = ShoeMsgXml.ShoeMsgParse(cmnd=cmndReply.cmnd,
-                                            urn=cmndReply.urn,
+        self.cmndReply = ShoeMsgXml.ShoeMsgParse(cmnd=msgReply.cmnd,
+                                            urn=msgReply.urn,
                                             args=replyArgs)
 
-        self.log.debug("CmndReplys %s" % self.cmndReply)
+        self.log.debug("CmndReplys %s" % str(self.cmndReply))
 
         return self.cmndReply
 
     def _formatReply(self, args, argsCfg):
-        return self._formatArgs(args, argsCfg,
+        replyArgsCfg={}
+        for argCfg in argsCfg:
+            if argCfg['direction'] is 'out':
+                replyArgsCfg[argCfg['name']]=argCfg
+
+        return self._formatArgs(args, replyArgsCfg,
                                 self._formatReplyArg)
 
     def _formatCmnd(self, args, argsCfg):
-        return self._formatArgs(args, argsCfg,
+        cmndArgsCfg=OrderedDict()
+        for argCfg in argsCfg:
+            if argCfg['direction'] is 'in':
+                cmndArgsCfg[argCfg['name']]=argCfg
+
+        return self._formatArgs(args, cmndArgsCfg,
                                 self._formatCmndArg)
 
     def _formatArgs(self, args, argsCfg, formatFunc=None):
         fmtArgs=OrderedDict()
-
         for argName, argVal in args.items():
             try:
-                argCfg=self.argsCfg[argName]
+                argCfg=argsCfg[argName]
             except KeyError:
                 errMsg="Invalid Arg %s" % argName
                 raise ShoeCmndErr(errMsg)
@@ -97,8 +101,8 @@ class ShoeCmnd(ShoeMsg):
             if formatFunc is not None:
                 fmtArgVal = formatFunc(argVal, argCfg)
 
-            self._checkAllowedVals(argVal, argCfg)
-            self._checkAllowedRange(argVal, argCfg)
+            self._checkAllowedVals(fmtArgVal, argCfg)
+            self._checkAllowedRange(fmtArgVal, argCfg)
 
             fmtArgs[argName] = fmtArgVal
 
@@ -106,7 +110,7 @@ class ShoeCmnd(ShoeMsg):
 
     def _formatReplyArg(self, arg, argCfg):
         if argCfg['direction'] is not 'out':
-            errMsg="Not Output Arg %s" % argName
+            errMsg="Not Output Arg %s" % argCfg['name']
             raise ShoeCmndErr(errMsg)
 
         stateCfg=argCfg['state']
@@ -137,7 +141,7 @@ class ShoeCmnd(ShoeMsg):
 
         elif (cfgArgType[:2] == 'ui'):
             try:
-                argRtn=int(str(arg))
+                argRtn=str(int(arg))
             except ValueError:
                 raise ShoeCmndErr(errMsg)
             except:
@@ -146,24 +150,24 @@ class ShoeCmnd(ShoeMsg):
         return argRtn
 
     def _formatCmndArg(self, argVal, argCfg):
+        cmndArgs={}
         if argCfg['direction'] is not 'in':
-            errMsg="Not Input Arg %s" % argName
+            errMsg="No Input Arg %s" % argCfg['name']
             raise ShoeCmndErr(errMsg)
 
         stateCfg=argCfg['state']
         cfgArgType=stateCfg['dataType']
-        argType=type(argVal)
 
         errMsg='Incorrect Type %s for send argVal %s' %\
                 (cfgArgType, argVal)
 
         if (cfgArgType == 'string'):
-            if (argType is not str):
+            if (type(argVal) is not str):
                 raise ShoeCmndErr(errMsg)
             argRtn=argVal
 
         elif (cfgArgType == 'boolean'):
-            if(argType is not bool):
+            if(type(argVal) is not bool):
                 raise ShoeCmndErr(errMsg)
 
             if argVal == True:
@@ -172,9 +176,12 @@ class ShoeCmnd(ShoeMsg):
                 argRtn = 'false'
 
         elif (cfgArgType[:2] == 'ui'):
-            if(argType is not int):
+            try:
+                argRtn=str(int(argVal))
+            except ValueError:
                 raise ShoeCmndErr(errMsg)
-            argRtn=argVal
+            except:
+                raise
 
         return argRtn
 
@@ -193,25 +200,32 @@ class ShoeCmnd(ShoeMsg):
 
     def _checkAllowedRange(self, argVal, argCfg):
         stateCfg=argCfg['state']
+
         try:
             errMsg='Value %s out of bounds' % argVal
-
             allowedRange=stateCfg['allowedValueRange']
             minVal=int(allowedRange['minimum'])
             maxVal=int(allowedRange['maximum'])
             step=int(allowedRange['step'])
+
+            argVal=int(argVal)
 
             if argVal<minVal or argVal>maxVal:
                 raise ShoeCmndErr(errMsg)
 
             if ((argVal-minVal)%step) != 0:
                 raise ShoeCmndErr(errMsg)
+
         except KeyError:
             pass
+
         except:
             raise
-        return
 
+        return
+###############################Exceptions#################################
+class ShoeCmndErr(Exception):
+    pass
 ##############################UNIT TESTS########################################
 from test_shoe import *
 

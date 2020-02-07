@@ -27,29 +27,17 @@ from .testGroupCtrlSvc import *
 from .testZoneCtrlSvc import *
 
 class TestAiosSvcDev(TestShoeDev):
-    ZONE_SVC_CFG={'controlURL': '/upnp/control/AiosServicesDvc/ZoneControl', \
-                     'serviceType': 'urn:schemas-denon-com:service:ZoneControl:2', \
-                     'serviceId': 'urn:denon-com:serviceId:ZoneControl', \
-                     'eventSubURL': '/upnp/event/AiosServicesDvc/ZoneControl', \
-                     'SCPDURL': '/upnp/scpd/AiosServicesDvc/ZoneControl.xml'}
-
-    GROUP_SVC_CFG={'controlURL': '/upnp/control/AiosServicesDvc/GroupControl',\
-                     'serviceType': 'urn:schemas-denon-com:service:GroupControl:1', \
-                     'serviceId': 'urn:denon-com:serviceId:GroupControl', \
-                     'eventSubURL': '/upnp/event/AiosServicesDvc/GroupControl', \
-                     'SCPDURL': '/upnp/scpd/AiosServicesDvc/GroupControl.xml'}
-
     ERR_SVC_CFG={'controlURL': '/upnp/control/AiosServicesDvc/ErrorHandler', \
                      'serviceType': 'urn:schemas-denon-com:service:ErrorHandler:1', \
                      'serviceId': 'urn:denon-com:serviceId:ErrorHandler', \
                      'eventSubURL': '/upnp/event/AiosServicesDvc/ErrorHandler', \
                      'SCPDURL': '/upnp/scpd/AiosServicesDvc/ErrorHandler.xml'}
 
-    DEV_CFG={'manufacturerURL': 'http://www.denon.com',\
+    CFG={'manufacturerURL': 'http://www.denon.com',\
                 'serviceList': {'service': [\
                     ERR_SVC_CFG,\
-                    ZONE_SVC_CFG,\
-                    GROUP_SVC_CFG]},\
+                    TestZoneCtrlSvc.CFG,\
+                    TestGroupCtrlSvc.CFG]},\
                 'modelName': 'HEOS 1', \
                 'modelNumber': 'DWS-1000 4.0', \
                 'deviceType': 'urn:schemas-denon-com:device:AiosServices:1', \
@@ -62,11 +50,11 @@ class TestAiosSvcDev(TestShoeDev):
     def __init__(self):
 
         super().__init__(name=self.NAME,
-                         udn=self.DEV_CFG['UDN'],
-                         urn=self.DEV_CFG['deviceType'],
-                         cfg=self.DEV_CFG)
+                         udn=self.CFG['UDN'],
+                         urn=self.CFG['deviceType'],
+                         cfg=self.CFG)
 
-        self.svcs={'GroupControl' : TestGroupCtrlSvc(self.name, self.GROUP_SVC_CFG), \
-                   'ZoneControl'  : TestZoneCtrlSvc(self.name, self.ZONE_SVC_CFG)}
+        self.svcs={'GroupControl' : TestGroupCtrlSvc(self.name), \
+                   'ZoneControl'  : TestZoneCtrlSvc(self.name)}
 
         return

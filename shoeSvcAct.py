@@ -42,8 +42,8 @@ class ShoeSvcAct(ShoeSvc):
         self.info=None
         return
 
-    def initSvc(self):
-        super().initSvc()
+    def setUp(self):
+        super().setUp()
         self.info=self._getInfo()
         return
 
@@ -69,7 +69,7 @@ class TestShoeSvcAct(unittest.TestCase):
         self.shoeSvcAct=ShoeSvcAct(host=self.HOST)
         self.shoeSvcAct._getXmlText=self._getXmlText
 
-        self.shoeSvcAct.initSvc()
+        self.shoeSvcAct.setUp()
 
         print("@@@@@@@@@@@@@@@@@@ACT Arg St Table@@@@@@@@@@@@@@@@@@@@@@@")
         print(self.shoeSvcAct._stateVarTbl)

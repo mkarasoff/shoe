@@ -32,8 +32,10 @@ from .testMediaSrvDev import *
 import copy
 
 class TestRootDev(TestShoeXml):
+    NAME="RootDev"
 
     def __init__(self):
+        self.name=self.NAME
         xmlFile='aios_device.xml'
         md5hex='59bfffcde20bfc4cf437bdf7676de386'
         urlPath='/upnp/desc/aios_device/'
@@ -51,10 +53,10 @@ class TestRootDev(TestShoeXml):
                 {'manufacturerURL': 'http://www.denon.com',\
                 'modelName': 'HEOS 1', \
                 'deviceList': {'device': [\
-                TestRendererDev.DEV_CFG, \
-                TestAiosSvcDev.DEV_CFG, \
-                TestMediaSrvDev.DEV_CFG, \
-                TestActDev.DEV_CFG]}, \
+                TestRendererDev.CFG, \
+                TestAiosSvcDev.CFG, \
+                TestMediaSrvDev.CFG, \
+                TestActDev.CFG]}, \
                 'serialNumber': 'ACJG9876543210', \
                 'modelNumber': 'DWS-1000 4.0', \
                 'deviceType': 'urn:schemas-denon-com:device:AiosDevice:1', \

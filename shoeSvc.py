@@ -26,29 +26,28 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ############################################################################
-from shoeDev import *
+from shoeCfgXml import *
 import copy
-from consoleLog import *
 
-class ShoeSvc(ShoeDev):
+class ShoeSvc(ShoeCfgXml):
     ACTTBL_KEYS=('scpd','actionList','action')
     STATEVARTBL_KEYS=('scpd','serviceStateTable','stateVariable')
     ARGLIST_KEYS=('argumentList','argument')
-    SVC_LIST_KEYS=('serviceList', 'service')
     NAME_KEY='name'
     STATEVAR_KEY='relatedStateVariable'
     SCPD_URL_KEY='SCPDURL'
     SVCNAME_KEY='serviceId'
     SVCNAME_TAG='serviceId'
+    SVC_LIST_KEYS=('serviceList', 'service')
 
     PATH_KEY='controlURL'
     URI_KEY='serviceType'
 
     def __init__(self,
                     host,
-                    svcCfg,
+                    cfg,
                     devInst=None,
-                    loglvl=0,
+                    loglvl=ConsoleLog.WARNING,
                     port=60006,
                     scpdCfg=None):
 
@@ -56,9 +55,7 @@ class ShoeSvc(ShoeDev):
                         port=port,
                         loglvl=loglvl)
 
-        self.log=ConsoleLog(self.__class__.__name__, loglvl)
-
-        self.cfg=svcCfg
+        self.cfg=cfg
         self._devInst=devInst
 
         self.devName=None
@@ -73,9 +70,11 @@ class ShoeSvc(ShoeDev):
         self.name=None
         return
 
-    def init(self):
+    def setUp(self):
         if self._devInst is not None:
             self.devName=self._devInst.name
+
+        print(self.cfg)
 
         self.path=self.cfg[self.PATH_KEY]
         self.uri=self.cfg[self.URI_KEY]
@@ -120,7 +119,7 @@ class ShoeSvc(ShoeDev):
 
         try:
             argLst=self._cmndTbl[cmnd]
-        except KeyError:
+        except (TypeError, KeyError):
             errMsg="%s not an available command" % cmnd
             raise ShoeSvcErr(errMsg)
         except:
@@ -167,9 +166,9 @@ class ShoeSvc(ShoeDev):
         shoeCmnd.send()
         return shoeCmnd.parse()
 
-    def _getScpd(self, svcCfg):
+    def _getScpd(self, cfg):
         try:
-            path=svcCfg[self.SCPD_URL_KEY]
+            path=cfg[self.SCPD_URL_KEY]
         except KeyError:
             raise ShoeSvcNoScpd(errStr)
         except:
@@ -187,10 +186,30 @@ class ShoeSvc(ShoeDev):
                 cfg,
                 typeIdKey=SVCNAME_KEY,
                 typeIdTag=SVCNAME_TAG ):
-
         self.log.debug(cfg)
 
-        return super()._getName(cfg, typeIdKey, typeIdTag)
+        name=None
+        cfgLine=[]
+        try:
+            cfgLine=cfg[typeIdKey].split(':')
+        except KeyError:
+            self.log.info("No %s entry found in config" % typeIdKey)
+        except:
+            raise
+
+        try:
+            name=cfgLine[cfgLine.index(typeIdTag)+1]
+        except (ValueError, IndexError):
+            self.log.info("No dev lbl found on cfg line %s" % cfgLine)
+        except:
+            raise
+
+        if name is None:
+            hashMd5=hashlib.md5(str(cfg).encode('utf-8'))
+            name=hashMd5.hexdigest()
+            self.log.warning("Nametag %s not found. Setting to %s" %
+                    (typeIdTag, name))
+        return name
 
     def _getStateVarTbl(self, scpd):
         stateVarTbl={}
@@ -260,7 +279,7 @@ class ShoeSvcNoTbl(Exception):
 ###############################Unittests#################################
 import unittest
 from test_shoe import *
-class TestShoeGroupCtrlSvc(TestShoeHttp):
+class TestShoeCtrlSvc(TestShoeHttp):
     HOST='127.0.0.1'
     def setUp(self):
         super().setUp()
@@ -275,62 +294,56 @@ class TestShoeGroupCtrlSvc(TestShoeHttp):
 
         self.cfg=False
 
+        self.testSvcs=[ self.testGroupCtrlSvc,
+                        self.testZoneCtrlSvc,
+                        self.testActSvc ]
+
         return
 
     def _sendTestMsgs(self):
         if self.cfg is False:
-            self.shoeSvc.init()
+            self.shoeSvc.setUp()
         return
 
     def runTest(self):
-        self._runSvcTest(self.testAiosDev.groupCtrlSvc, self.testGroupCtrlSvc)
-
-        getGroupVolArg=self.shoeSvc.getCmndArgsCfg(self.testGroupCtrlSvc.getGroupVolCmnd)
-
-        print("@@@@@@@@@@@@@@@@@@@Args for Get Group Vol Cmd@@@@@@@@@@@@@@@@@@@")
-        print(getGroupVolArg)
-
-        self.assertEqual(getGroupVolArg,
-                        self.testGroupCtrlSvc.getGroupVolArg,
-                        "Get Group Volume Args")
+        for svc in self.testSvcs:
+            self._runSvcTest(svc)
         return
 
-    def _runSvcTest(self, svcCfg, testSvc):
+    def _runSvcTest(self, testSvc):
         class testDev():
             def __init__(self):
                 self.name=testSvc.devName
                 return
 
-        devInst=testDev()
+        self.devInst=testDev()
 
         self.shoeSvc=ShoeSvc(host=self.HOST,
-                            svcCfg=svcCfg,
-                            devInst=devInst)
-
-        shoeSvc=self.shoeSvc
+                            cfg=testSvc.cfg,
+                            devInst=self.devInst)
 
         self.httpTest()
 
         msg="@@@@@@@@@@@@@@@@@@%s Arg St Table@@@@@@@@@@@@@@@@@@@@@@@" % testSvc.name
         print(msg)
-        print(shoeSvc._stateVarTbl)
+        print(self.shoeSvc._stateVarTbl)
 
-        self.assertEqual(shoeSvc._stateVarTbl,
-                        testSvc._stateVarTbl,
+        self.assertEqual(self.shoeSvc._stateVarTbl,
+                        testSvc.stateVarTbl,
                         "Arg State Table")
 
         msg="@@@@@@@@@@@@@@@@@@%s Command Table@@@@@@@@@@@@@@@@@@@@@@@" % testSvc.name
         print(msg)
         print(self.shoeSvc._cmndTbl)
-        self.assertEqual(shoeSvc._cmndTbl,
-                        testSvc._cmndTbl,
+        self.assertEqual(self.shoeSvc._cmndTbl,
+                        testSvc.cmndTbl,
                         "Command Table")
 
         msg="@@@@@@@@@@@@@@@@@@%s Command List@@@@@@@@@@@@@@@@@@@@@@@" % testSvc.name
         print(msg)
         print(self.shoeSvc.cmnds)
         self.assertCountEqual(self.shoeSvc.cmnds,
-                        testSvc.cmnds,
+                        testSvc.cmndTbl.keys(),
                         "Command List")
 
         msg="@@@@@@@@@@@@@@@@@@%s Name@@@@@@@@@@@@@@@@@@@@@@@" % testSvc.name
@@ -347,12 +360,29 @@ class TestShoeGroupCtrlSvc(TestShoeHttp):
                         testSvc.devName,
                         "Dev Name")
 
-class TestShoeZoneCtrlSvc(TestShoeGroupCtrlSvc):
+class TestShoeCtrlSvcArgs(TestShoeCtrlSvc):
     def runTest(self):
-        self._runSvcTest(self.testAiosDev.zoneCtrlSvc, self.testZoneCtrlSvc)
+        for testSvc in self.testSvcs:
+            self._getArgsTest(testSvc)
         return
 
-class TestShoeActSvc(TestShoeGroupCtrlSvc):
-    def runTest(self):
-        self._runSvcTest(self.testAiosDev.actSvc, self.testActSvc)
-        return
+    def _getArgsTest(self, testSvc):
+        class testDev():
+            def __init__(self):
+                self.name=testSvc.devName
+                return
+
+        self.devInst=testDev()
+
+        cmndNames=testSvc.cmnds.keys()
+
+        self.shoeSvc=ShoeSvc(host=self.HOST,
+                            cfg=testSvc.cfg,
+                            devInst=self.devInst)
+
+        self.httpTest()
+
+        for cmndName in cmndNames:
+            cmndArgsCfg=self.shoeSvc.getCmndArgsCfg(cmndName)
+            self.assertCountEqual(testSvc.cmnds[cmndName].argsCfg,
+                                    cmndArgsCfg)

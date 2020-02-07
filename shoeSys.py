@@ -34,7 +34,7 @@ from collections import defaultdict
 
 class ShoeSys():
 
-    def __init__(self, host, loglvl=0, port=60006):
+    def __init__(self, host, loglvl=ConsoleLog.WARNING, port=60006):
         self.log=ConsoleLog(self.__class__.__name__, loglvl)
 
         self.host = host
@@ -51,9 +51,9 @@ class ShoeSys():
 
         return infoDev._getInfo()
 
-    def init(self):
+    def setUp(self):
         self.shoeDevRoot=ShoeDevRoot(self.host, self.loglvl, self.port)
-        self.shoeDevRoot.init()
+        self.shoeDevRoot.setUp()
 
         self.devs=self.shoeDevRoot.devs
 

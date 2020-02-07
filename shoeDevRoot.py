@@ -28,13 +28,16 @@
 from shoeDev import *
 
 class ShoeDevRoot(ShoeDev):
-
     ROOTDEV_KEYS=('root', 'device')
     DEVLIST_KEYS=('deviceList', 'device')
 
     AIOS_CFG_PATH='/upnp/desc/aios_device/aios_device.xml'
 
-    def __init__(self, host, aiosCfg=None, loglvl=0, port=60006):
+    def __init__(self,
+                    host,
+                    aiosCfg=None,
+                    loglvl=ConsoleLog.WARNING,
+                    port=60006):
 
         super().__init__(host=host,
                         path=path,
@@ -45,13 +48,13 @@ class ShoeDevRoot(ShoeDev):
         self._aiosCfg=aiosCfg
         return
 
-    def init(self):
+    def setUp(self):
         if self.aiosCfg is None:
             self.aiosCfg=self.getCfg(self.AIOS_CFG_PATH)
 
         self.cfg=self._getRootDevCfg(self.aiosCfg)
 
-        super().init()
+        super().setUp()
 
         self._devs=self._getDevs(self.cfg)
 
@@ -66,7 +69,7 @@ class ShoeDevRoot(ShoeDev):
 
     def update(self):
         self.aisoCfg=None
-        init()
+        setUp()
         return
 
     def sendCmnd(self, cmnd, args, devName=None, svcName=None):
@@ -178,7 +181,7 @@ class ShoeDevRoot(ShoeDev):
                             host=self.host,
                             port=self.port,
                             loglvl=self.loglvl)
-            shoeDev.init()
+            shoeDev.setUp()
             devs[shoeDev.name]=shoeDev
 
         return devs

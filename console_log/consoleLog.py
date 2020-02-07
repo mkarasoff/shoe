@@ -34,16 +34,26 @@
 #SOFTWARE.
 #
 ############################################################################
-
 import logging
+
 class ConsoleLog(logging.getLoggerClass()):
     RT_FORMAT='[%(relativeCreated)d] %(levelname)s: %(message)s'
     DBUG_FORMAT='[%(asctime)s] %(filename)s:%(lineno)s  %(levelname)s: %(message)s'
 
+    DEBUG   = logging.DEBUG
+    INFO    = logging.INFO
+    WARNING = logging.WARNING
+    ERROR   = logging.ERROR
+
     def __init__(self, name,
                     level=logging.WARNING,
                     manager=logging.root.manager):
-        super().__init__(name, level)
+
+        if level is None:
+            level=self.WARNING
+
+        self.name=self._getName(name, manager)
+        super().__init__(self.name, level)
 
         self.ch = self._makeConsoleHndlr(level)
 
@@ -56,21 +66,28 @@ class ConsoleLog(logging.getLoggerClass()):
 
         return
 
+    def _getName(self, name, manager):
+        nameIter=0
+        mgrNames=[]
+
+        if manager is not None:
+            mgrNames=manager.loggerDict.keys()
+
+        for mgrName in mgrNames:
+            (baseName, baseIter)=mgrName.split('.')
+            if baseName == name:
+                if nameIter <= int(baseIter):
+                    nameIter=int(baseIter)+1
+
+        return '%s.%s' % (name,nameIter)
+
     def _setManager(self, manager):
-        names=[]
         self.manager=manager
 
         if manager is not None:
-            names=manager.loggerDict.keys()
-
-            if self.name in names:
-                raise ConsoleLogError("Logger named %s already "\
-                                  "exists with this manager"\
-                                  % name)
-
             logging._acquireLock()
             manager.loggerDict[self.name]=self
-            manager._fixupParents(self)
+            #manager._fixupParents(self)
             logging._releaseLock()
 
         return
@@ -158,25 +175,26 @@ class TestConsoleLog(unittest.TestCase):
         self.buf.truncate(0)
         return logOut
 
-class TestConselLogWarningLvl(TestConsoleLog):
+class TestConsoleLogWarningLvl(TestConsoleLog):
     def setUp(self):
         self.clogPrtLvls=("WARNING", "ERROR")
         self.setUpLogger(logging.WARNING)
         return
 
-class TestConselLogInfoLvl(TestConsoleLog):
+class TestConsoleLogInfoLvl(TestConsoleLog):
     def setUp(self):
         self.clogPrtLvls=("ERROR", "WARNING", "INFO")
         self.setUpLogger(logging.INFO)
         return
 
-class TestConselLogDbugLvl(TestConsoleLog):
+class TestConsoleLogDbugLvl(TestConsoleLog):
     def setUp(self):
         self.clogPrtLvls=("ERROR", "WARNING", "INFO", "DEBUG")
         self.setUpLogger(logging.DEBUG)
+        self.setUpLogger(logging.DEBUG)
         return
 
-class TestConselLogErrorLvl(TestConsoleLog):
+class TestConsoleLogErrorLvl(TestConsoleLog):
     def setUp(self):
         self.clogPrtLvls=("ERROR")
         self.setUpLogger(logging.ERROR)

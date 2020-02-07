@@ -29,7 +29,7 @@ from collections import OrderedDict
 from collections import namedtuple
 import re
 from lxml import etree
-from consoleLog import *
+from console_log import *
 
 class ShoeMsgXml():
     ENVELOPE_NS_URL=b'http://schemas.xmlsoap.org/soap/envelope/'

@@ -25,7 +25,7 @@
 ############################################################################
 from shoeSys import *
 from collections import OrderedDict
-from consoleLog import *
+from console_log import *
 
 class ShoeEvent(ShoeCfgXml):
 

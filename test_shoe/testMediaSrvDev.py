@@ -37,7 +37,7 @@ class TestMediaSrvDev(TestShoeDev):
                      'eventSubURL': '/upnp/event/ams_dvc/ConnectionManager',\
                      'SCPDURL': '/upnp/scpd/ams_dvc/ConnectionManager.xml'}
 
-    DEV_CFG={'manufacturerURL': 'http://www.denon.com',\
+    CFG={'manufacturerURL': 'http://www.denon.com',\
                 'serviceList': {'service': [\
                     CONTENT_DIR_SVC_CFG, \
                     CONN_MGR_SVC_CFG]},\
@@ -58,8 +58,8 @@ class TestMediaSrvDev(TestShoeDev):
     def __init__(self):
 
         super().__init__(name=self.NAME,
-                         udn=self.DEV_CFG['UDN'],
-                         urn=self.DEV_CFG['deviceType'],
-                         cfg=self.DEV_CFG)
+                         udn=self.CFG['UDN'],
+                         urn=self.CFG['deviceType'],
+                         cfg=self.CFG)
 
         return

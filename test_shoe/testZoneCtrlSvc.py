@@ -30,7 +30,13 @@ from .testShoeEvent import *
 from collections import OrderedDict
 
 class TestZoneCtrlSvc(TestShoeSvc):
-    def __init__(self, devName, svcCfg):
+    CFG={'controlURL': '/upnp/control/AiosServicesDvc/ZoneControl', \
+                     'serviceType': 'urn:schemas-denon-com:service:ZoneControl:2', \
+                     'serviceId': 'urn:denon-com:serviceId:ZoneControl', \
+                     'eventSubURL': '/upnp/event/AiosServicesDvc/ZoneControl', \
+                     'SCPDURL': '/upnp/scpd/AiosServicesDvc/ZoneControl.xml'}
+
+    def __init__(self, devName='AiosServices', svcCfg=CFG):
         super().__init__(xmlFile='ZoneControl.xml',
                             md5hex='181615f9e5cc9c18f413ba3719afedb6',
                             devName=devName,

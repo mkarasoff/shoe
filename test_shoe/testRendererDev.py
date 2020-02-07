@@ -43,7 +43,7 @@ class TestRendererDev(TestShoeDev):
                      'eventSubURL': '/upnp/event/renderer_dvc/RenderingControl',\
                      'SCPDURL': '/upnp/scpd/renderer_dvc/RenderingControl.xml'}
 
-    DEV_CFG={'manufacturerURL': 'http://www.denon.com',\
+    CFG={'manufacturerURL': 'http://www.denon.com',\
                 'serviceList': {'service': [\
                     AV_TRANS_SVC_CFG,\
                     CONN_MGR_SVC_CFG,\
@@ -61,8 +61,8 @@ class TestRendererDev(TestShoeDev):
     def __init__(self):
 
         super().__init__(name=self.NAME,
-                         udn=self.DEV_CFG['UDN'],
-                         urn=self.DEV_CFG['deviceType'],
-                         cfg=self.DEV_CFG)
+                         udn=self.CFG['UDN'],
+                         urn=self.CFG['deviceType'],
+                         cfg=self.CFG)
 
         return

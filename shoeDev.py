@@ -25,32 +25,30 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ############################################################################
-from shoeCfgXml import *
+from shoeSvc import *
 import hashlib
 
-class ShoeDev(ShoeCfgXml):
+class ShoeDev(ShoeSvc):
     DEVNAME_KEY='deviceType'
     DEVNAME_TAG='device'
 
     UUID_KEY='UDN'
 
-    def __init__(self, devCfg=None, loglvl=None, host=None, port=60006):
+    def __init__(self, cfg=None, loglvl=ConsoleLog.WARNING, host=None, port=60006):
 
         super().__init__(host=host,
                         port=port,
+                        cfg=cfg,
                         loglvl=loglvl)
 
-        log=ConsoleLog(self.__class__.__name__, loglvl)
-
-        self.cfg=devCfg
         self.name=None
         self._svcs=None
         self.uuid=None
         return
 
-    def init(self):
+    def setUp(self):
         if self.cfg is None:
-            errStr="No device configuration for init"
+            errStr="No device configuration for setUp"
             raise ShoeDevErr(errStr)
 
         self.name= self._getName(self.cfg)
@@ -58,9 +56,9 @@ class ShoeDev(ShoeCfgXml):
         try:
             self.uuid=self._getUuid(self.cfg)
         except ShoeDevUnknownParam as e:
-            log.info("Cannot find UUID for Dev",
+            self.log.info("Cannot find UUID for Dev: %s" %
                        self.name)
-            log.debug(str(e))
+            self.log.debug(str(e))
             self.uuid=None
         except:
             raise
@@ -68,8 +66,8 @@ class ShoeDev(ShoeCfgXml):
         try:
             self._svcs=self._getSvcs(self.cfg)
         except ShoeDevNoSvcs as e:
-                log.info("No Services for Dev", self.name)
-                log.debug(str(e))
+            self.log.info("No Services for Dev %s" % self.name)
+            self.log.debug(str(e))
             self._svcs={}
         except:
             raise
@@ -97,7 +95,8 @@ class ShoeDev(ShoeCfgXml):
             try:
                 cmnds=svc.cmnds
             except ShoeSvcNoTbl:
-                log.info("Service %s has no cmnd table", self.svc.name)
+                self.log.info("Service %s has no cmnd table"
+                        % self.svc.name)
                 continue
             except:
                 raise
@@ -124,7 +123,7 @@ class ShoeDev(ShoeCfgXml):
         svcs={}
 
         if cfg is None:
-            raise ShoeDevErr("No device configuration for service init")
+            raise ShoeDevErr("No device configuration for service setUp")
 
         unkownSvcIdx=0
 
@@ -144,23 +143,24 @@ class ShoeDev(ShoeCfgXml):
         if not isinstance(svcList, list):
             svcList=[svcList,]
 
-        for svcCfg in svcList:
-            svc=shoeSvc(host=host,
-                        port=port,
-                        loglvl=loglvl,
-                        svcCfg=svcCfg,
+        for cfg in svcList:
+            svc=ShoeSvc(host=self.host,
+                        port=self.port,
+                        loglvl=self.loglvl,
+                        cfg=cfg,
                         devInst=self)
 
             try:
-                svc.init()
+                svc.setUp()
             except ShoeSvcNoScpd:
-                log.warning("Service has no SCPD", svc.name)
+                self.log.warning("Service has no SCPD: %s" % svc.name)
                 continue
             except:
                 raise
 
             if svc.name == None:
-                log.warning("No service name.  Setting name to:", unknownSvcIdx)
+                self.log.warning("No service name.  Setting name to: %s"
+                        % unknownSvcIdx)
                 svc.name=unkownSvcIdx
                 unkownSvcIdx=unkownSvcIdx+1
 
@@ -172,30 +172,7 @@ class ShoeDev(ShoeCfgXml):
                 cfg,
                 typeIdKey=DEVNAME_KEY,
                 typeIdTag=DEVNAME_TAG ):
-
-        name=None
-        cfgLine=[]
-        try:
-            cfgLine=cfg[typeIdKey].split(':')
-        except KeyError:
-            log.info("No %s entry found in config" % typeIdKey)
-        except:
-            raise
-
-        try:
-            name=cfgLine[l.index(typeIdTag)+1]
-        except (ValueError, IndexError):
-            log.info("No dev lbl found on cfg line %s" % cfgLine)
-        except:
-            raise
-
-        if name is None:
-            hashMd5=hashlib.md5(str(cfg).encode('utf-8'))
-            name=hashMd5.hexdigest()
-            log.warning("Nametag %s not found. Setting to %s" %
-                    (typeIdTag, name))
-
-        return name
+        return super()._getName(cfg, typeIdKey, typeIdTag)
 
     def _getUuid(self, cfg):
         try:
@@ -238,16 +215,18 @@ class TestShoeAiosDev(unittest.TestCase):
     def runTest(self):
         for name in self.testDevNames:
             dev=self.testRoot.devs[name]
-            self._runTest(dev)
+            self._devTest(dev)
         return
 
     def _devTest(self, dev):
-        print("@@@@@@@@@@@@@@@@@@Dev Test %@@@@@@@@@@@@@@@@@@@@@@@"\
+        print("@@@@@@@@@@@@@@@@@@Dev Test %s@@@@@@@@@@@@@@@@@@@@@@@"\
                 % dev.name)
 
-        shoeDev=ShoeDev(self.HOST, dev.cfg, loglvl=logging.DEBUG)
+        shoeDev=ShoeDev(host=self.HOST,
+                        cfg=dev.cfg,
+                        loglvl=logging.DEBUG)
 
-        shoeDev.initDev()
+        shoeDev.setUp()
 
         self.assertEqual(dev.cfg, shoeDev.cfg)
 

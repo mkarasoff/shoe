@@ -29,7 +29,13 @@ from .testShoeCmnd import *
 from collections import OrderedDict
 
 class TestGroupCtrlSvc(TestShoeSvc):
-    def __init__(self, devName, svcCfg):
+    CFG={'controlURL': '/upnp/control/AiosServicesDvc/GroupControl',\
+                     'serviceType': 'urn:schemas-denon-com:service:GroupControl:1', \
+                     'serviceId': 'urn:denon-com:serviceId:GroupControl', \
+                     'eventSubURL': '/upnp/event/AiosServicesDvc/GroupControl', \
+                     'SCPDURL': '/upnp/scpd/AiosServicesDvc/GroupControl.xml'}
+
+    def __init__(self, devName='AiosServices', svcCfg=CFG):
         super().__init__(  xmlFile='GroupControl.xml',
                         md5hex='d2164658e60eedbe0c79090ceb1d904e',
                         devName=devName,
@@ -40,7 +46,7 @@ class TestGroupCtrlSvc(TestShoeSvc):
 ################################################################################
         cmnd=TestShoeCmnd('SetGroupMemberChannel', self.urn, self.cmndPath)
 
-        self.argsCfg=[\
+        cmnd.argsCfg=[\
                 {'relatedStateVariable': 'GroupUUID', 'direction': 'in', 'name': 'GroupUUID',\
                      'state' : {'dataType': 'string', '@sendEvents': 'no', 'name': 'GroupUUID'}},\
                 {'relatedStateVariable': 'AudioChannel', 'direction': 'in', 'name': 'AudioChannel',\
@@ -49,9 +55,9 @@ class TestGroupCtrlSvc(TestShoeSvc):
                             ['NORMAL', 'LEFT', 'RIGHT', 'REAR_LEFT', \
                             'REAR_RIGHT', 'LOW_FREQUENCY', 'REAR_STEREO']} }},]
 
-        self.args=OrderedDict()
-        self.args['GroupUUID']='17083c46d003001000800005cdfbb9c6'
-        self.args['AudioChannel']='LEFT'
+        cmnd.args=OrderedDict()
+        cmnd.args['GroupUUID']='17083c46d003001000800005cdfbb9c6'
+        cmnd.args['AudioChannel']='LEFT'
 
         self.cmnds[cmnd.name]=cmnd
 
@@ -103,7 +109,9 @@ class TestGroupCtrlSvc(TestShoeSvc):
                     {'relatedStateVariable': 'LastChange', 'direction': 'out', 'name': 'CurrentState',\
                      'state' : {'dataType': 'string', '@sendEvents': 'yes', 'name': 'LastChange'}},]
 
+        cmnd.rtn=OrderedDict([('CurrentState', {}),])
         self.cmnds[cmnd.name]=cmnd
+
         return
 
 ################################################################################

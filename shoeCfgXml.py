@@ -30,15 +30,15 @@ from collections import OrderedDict
 from lxml import etree
 from collections import defaultdict
 from io import BytesIO
-from consoleLog import *
+from console_log import *
 
 class ShoeCfgXml():
-    def __init__(self, host=None, path='', loglvl=0, port=60006):
+    def __init__(self, host=None, path='', loglvl=ConsoleLog.WARNING, port=60006):
         self.log=ConsoleLog(self.__class__.__name__, loglvl)
+        self.loglvl=loglvl
         self.host = host
         self.port = port
         self.path = path
-        self.loglvl=loglvl
         self.xmlDict={}
         return
 
@@ -48,8 +48,7 @@ class ShoeCfgXml():
 
         self.xmlText = self._getXmlText(path,
                 self.host,
-                self.port,
-                self.loglvl)
+                self.port)
 
         self.xmlDict = self._getXmlDict(self.xmlText)
 
@@ -69,8 +68,8 @@ class ShoeCfgXml():
 
         return xmlDict
 
-    def _getXmlText(self, path, host, port, loglvl=None):
-        httpRes = self._getHttp(path, host, port, loglvl)
+    def _getXmlText(self, path, host, port):
+        httpRes = self._getHttp(path, host, port)
         self.log.debug("status %s", httpRes.status)
         try:
             status = int(httpRes.status)
@@ -140,10 +139,10 @@ class ShoeCfgXml():
                 d[t.tag] = text
         return d
 
-    def _getHttp(self, path, host, port, loglvl):
+    def _getHttp(self, path, host, port):
         conn = http.client.HTTPConnection(host, port)
 
-        if loglvl <= self.log.DEBUG:
+        if self.loglvl <= self.log.DEBUG:
             conn.set_debuglevel(1)
         else:
             conn.set_debuglevel(0)
@@ -159,8 +158,8 @@ class ShoeCfgXml():
         except Exception as e:
             raise ShoeCfgXmlHttpSendErr(str(e))
 
+        self.log.debug("Host %s" % host)
         try:
-            self.log.debug("Host", host)
             httpRes = conn.getresponse()
         except Exception as e:
             conn.close()
@@ -178,7 +177,7 @@ class ShoeCfgXmlHttpRtnErr(Exception):
 
 ###############################Unittests#################################
 from test_shoe import *
-
+from pprint import pprint
 class TestShoeCfgXml(TestShoeHttp):
     def setUp(self):
         super().setUp()
@@ -195,13 +194,14 @@ class TestShoeCfgXml(TestShoeHttp):
         return
 
     def _sendTestMsgs(self):
-        shoeCfg=ShoeCfgXml(self.host, self.testFile, loglvl=10)
+        shoeCfg=ShoeCfgXml(self.host, self.testFile, loglvl=logging.DEBUG)
         self.xmlDict=shoeCfg.getCfg()
         return
 
 class TestShoeCfgXmlDict(TestShoeCfgXml):
     def runTest(self):
         for testObj in self.testObjs:
+            print("Testing: ", testObj.name)
             self._testXml(testObj)
         return
 
@@ -213,6 +213,11 @@ class TestShoeCfgXmlDict(TestShoeCfgXml):
 
         errMsg = "Shoe cfg: dict not correct: %s." % \
                     testObj.fileName
+
+        print("Return")
+        pprint(self.xmlDict)
+        print("Expected")
+        pprint(testObj.xmlDict)
 
         self.assertDictEqual(self.xmlDict,
                         testObj.xmlDict,
