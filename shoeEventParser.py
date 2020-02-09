@@ -23,7 +23,7 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ############################################################################
-from shoeSys import *
+from shoeCfgXml import *
 from collections import OrderedDict
 
 class ShoeEventParser(ShoeCfgXml):
@@ -51,6 +51,7 @@ class ShoeEventParser(ShoeCfgXml):
         return self.xmlDict
 
     def _getXmlDict(self, xmlText):
+        self.log.debug("XmlText %s" % xmlText)
 
         xmlDict=OrderedDict()
         try:
@@ -61,6 +62,8 @@ class ShoeEventParser(ShoeCfgXml):
             raise
 
         currStDict=self._etreeToDict(xmlTreeRoot)
+
+        self.log.debug("Current State Dict %s" % currStDict)
 
         for event, eventVal in currStDict['Event'].items():
             xmlDict[event]=self._format(eventVal)
@@ -78,9 +81,12 @@ class ShoeEventParser(ShoeCfgXml):
         except:
             raise
 
+        self.log.debug("Event Val %s" % eventText)
+
         try:
             tree=etree.parse(BytesIO(eventText))
         except etree.XMLSyntaxError:
+            self.log.debug("Syntax Error %s" % eventText)
             try:
                 return eventText.decode()
             except AttributeError:
@@ -92,6 +98,8 @@ class ShoeEventParser(ShoeCfgXml):
 
         treeRoot=tree.getroot()
         rtnVal=self._etreeToDict(treeRoot)
+
+        self.log.debug("Return Val %s" % rtnVal)
 
         return rtnVal
 
@@ -106,6 +114,7 @@ class ShoeEventParser(ShoeCfgXml):
         return xmlStr
 
 from test_shoe import *
+import pprint
 class TestShoeEvent(unittest.TestCase):
     def setUp(self):
         self.testSvcs=[ TestActSvc(), TestGroupCtrlSvc(), TestZoneCtrlSvc()]
@@ -126,9 +135,12 @@ class TestShoeEvent(unittest.TestCase):
 
             currSt=shoeSt.parse()
 
+            pp = pprint.PrettyPrinter(indent=2)
             print(svc.name)
-            print("curr st returned", currSt)
-            print("curr st expected", cmnd.rtn['CurrentState'])
+            print("Returned")
+            pp.pprint(currSt)
+            print("Expected")
+            pp.pprint(cmnd.rtn['CurrentState'])
 
-            self.assertCountEqual(cmnd.rtn['CurrentState'], currSt)
+            self.assertDictEqual(cmnd.rtn['CurrentState'], currSt)
         return

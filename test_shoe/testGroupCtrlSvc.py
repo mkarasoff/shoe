@@ -44,7 +44,7 @@ class TestGroupCtrlSvc(TestShoeSvc):
         self.groupUUID='17083c46d003001000800005cdfbb9c6'
 
 ################################################################################
-        cmnd=TestShoeCmnd('SetGroupMemberChannel', self.urn, self.cmndPath)
+        cmnd=TestShoeCmnd('SetGroupMemberChannel', self.urn, self.cmndPath, self)
 
         cmnd.argsCfg=[\
                 {'relatedStateVariable': 'GroupUUID', 'direction': 'in', 'name': 'GroupUUID',\
@@ -62,7 +62,7 @@ class TestGroupCtrlSvc(TestShoeSvc):
         self.cmnds[cmnd.name]=cmnd
 
 ################################################################################
-        cmnd=TestShoeCmnd('GetGroupVolume', self.urn, self.cmndPath)
+        cmnd=TestShoeCmnd('GetGroupVolume', self.urn, self.cmndPath, self)
 
         cmnd.argsCfg= [\
                     {'relatedStateVariable': 'GroupUUID', 'direction': 'in', 'name': 'GroupUUID',\
@@ -77,7 +77,7 @@ class TestGroupCtrlSvc(TestShoeSvc):
 
         self.cmnds[cmnd.name]=cmnd
 ################################################################################
-        cmnd=TestShoeCmnd('CreateGroup', self.urn, self.cmndPath)
+        cmnd=TestShoeCmnd('CreateGroup', self.urn, self.cmndPath, self)
 
         cmnd.argsCfg=  [\
                 {'relatedStateVariable': 'GroupFriendlyName','direction': 'in',\
@@ -103,7 +103,7 @@ class TestGroupCtrlSvc(TestShoeSvc):
 
         self.cmnds[cmnd.name]=cmnd
 ################################################################################
-        cmnd=TestShoeEvent('GetCurrentState', self.urn, self.cmndPath)
+        cmnd=TestShoeEvent('GetCurrentState', self.urn, self.cmndPath, self)
 
         cmnd.argsCfg= [\
                     {'relatedStateVariable': 'LastChange', 'direction': 'out', 'name': 'CurrentState',\

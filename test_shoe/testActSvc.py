@@ -42,7 +42,7 @@ class TestActSvc(TestShoeSvc):
                         svcCfg=svcCfg)
 
 ################################################################################
-        cmnd=TestShoeEvent('GetCurrentState', self.urn, self.cmndPath)
+        cmnd=TestShoeEvent('GetCurrentState', self.urn, self.cmndPath, self)
 
         cmnd.argsCfg= [\
                       {'relatedStateVariable': 'LastChange', 'direction': 'out', 'name': 'CurrentState',\
@@ -56,7 +56,7 @@ class TestActSvc(TestShoeSvc):
         self.cmnds[cmnd.name]=cmnd
 
 ################################################################################
-        cmnd = TestShoeCmnd('GetAccessPointList', self.urn, self.cmndPath)
+        cmnd = TestShoeCmnd('GetAccessPointList', self.urn, self.cmndPath, self)
 
         cmnd.argsCfg = [\
                          {'relatedStateVariable': 'ARG_ConfigurationToken', 'direction': 'in', 'name': 'configurationToken',\
@@ -70,7 +70,7 @@ class TestActSvc(TestShoeSvc):
         self.cmnds[cmnd.name]=cmnd
 
 ################################################################################
-        cmnd = TestShoeCmnd('GetConfigurationToken', self.urn, self.cmndPath)
+        cmnd = TestShoeCmnd('GetConfigurationToken', self.urn, self.cmndPath, self)
 
         cmnd.argsCfg= [\
                         {'relatedStateVariable': 'ARG_ConfigurationToken', 'direction': 'out', 'name': 'configurationToken',\
@@ -81,7 +81,7 @@ class TestActSvc(TestShoeSvc):
         self.cmnds[cmnd.name]=cmnd
 
 ################################################################################
-        cmnd = TestShoeCmnd('SetUpdateAction', self.urn, self.cmndPath)
+        cmnd = TestShoeCmnd('SetUpdateAction', self.urn, self.cmndPath, self)
 
         cmnd.argsCfg=[\
                     {'relatedStateVariable': 'UpdateAction', 'direction': 'in', 'name': 'UpdateAction',\
@@ -100,7 +100,7 @@ class TestActSvc(TestShoeSvc):
         self.cmnds[cmnd.name]=cmnd
 
 ################################################################################
-        cmnd = TestShoeCmnd('GetNetworkConfiguration', self.urn, self.cmndPath)
+        cmnd = TestShoeCmnd('GetNetworkConfiguration', self.urn, self.cmndPath, self)
 
         cmnd.argsCfg=[\
                 {'relatedStateVariable': 'ARG_NetworkConfigurationID', 'direction': 'in', 'name': 'networkConfigurationId',\
@@ -997,168 +997,237 @@ class TestActSvc(TestShoeSvc):
 
     @property
     def getCurrStRtnMsgBody(self):
-
-        rtn = '<CurrentState>&lt;Event '\
-                    'xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/ACT/&quot;&gt;&lt;ActiveInterface '\
-                    'val=&quot;1&quot;/&gt;'\
-                    '&lt;FriendlyName val=&quot;Kitchen&quot;/&gt;'\
-                    '&lt;HEOSNetId val=&quot;DEFAULT-SSID-8e09dfb09df4FBfa996&quot;/&gt;'\
-                    '&lt;LastDiscoveredDevice val=&quot;&quot;/&gt;'\
-                    '&lt;P2PMode val=&quot;NONE&quot;/&gt;'\
-                    '&lt;Transcode val=&quot;1&quot;/&gt;'\
-                    '&lt;AudioConfig val=&quot;&amp;lt;AudioConfig&amp;gt;'\
-                '&amp;lt;highpass&amp;gt;0&amp;lt;/highpass&amp;gt;'\
-                '&amp;lt;lowpass&amp;gt;80&amp;lt;/lowpass&amp;gt;'\
-                '&amp;lt;subwooferEnable&amp;gt;0&amp;lt;/subwooferEnable&amp;gt;'\
-                '&amp;lt;outputMode&amp;gt;STEREO&amp;lt;/outputMode&amp;gt;'\
-                '&amp;lt;ampBridged&amp;gt;0&amp;lt;/ampBridged&amp;gt;'\
-                '&amp;lt;soundMode&amp;gt;STEREO&amp;lt;/soundMode&amp;gt;'\
-                '&amp;lt;impedance&amp;gt;'\
-                '&amp;lt;/impedance&amp;gt;'\
-                '&amp;lt;ampPower&amp;gt;1&amp;lt;/ampPower&amp;gt;'\
-                '&amp;lt;availableSoundModes&amp;gt;MOVIE_NORMAL,MUSIC_NORMAL&amp;lt;/availableSoundModes&amp;gt;'\
-                '&amp;lt;sourceDirect&amp;gt;0&amp;lt;/sourceDirect&amp;gt;'\
-                '&amp;lt;bassBoost&amp;gt;0&amp;lt;/bassBoost&amp;gt;'\
-                '&amp;lt;speakerOption&amp;gt;'\
-                '&amp;lt;/speakerOption&amp;gt;'\
-                '&amp;lt;/AudioConfig&amp;gt;'\
-                    '&quot;/&gt;&lt;BTConfig val=&quot;&amp;lt;BluetoothStatus&amp;gt;'\
-                '&amp;lt;connectedStatus&amp;gt;DISCONNECTED&amp;lt;/connectedStatus&amp;gt;'\
-                '&amp;lt;connectedDevice&amp;gt;'\
-                '&amp;lt;/connectedDevice&amp;gt;'\
-                '&amp;lt;pairedDevices&amp;gt;'\
-                '&amp;lt;/pairedDevices&amp;gt;'\
-                '&amp;lt;hasPairedDevices&amp;gt;0&amp;lt;/hasPairedDevices&amp;gt;'\
-                '&amp;lt;/BluetoothStatus&amp;gt;&quot;/&gt;'\
-                    '&lt;ConfigurationStatus val=&quot;0&quot;/&gt;'\
-                    '&lt;UpgradeComponentInstallProgress val=&quot;0&quot;/&gt;'\
-                    '&lt;CurrentLanguageLocale val=&quot;en_US&quot;/&gt;'\
-                    '&lt;CurrentWirelessProfile val=&quot;'\
-                '&amp;lt;wirelessProfile SSID=&amp;quot;DEFAULT-SSID-8e09dfb09df4FBfa996&amp;quot;&amp;gt;'\
-                '&amp;lt;wirelessSecurity enabled=&amp;quot;true&amp;quot;&amp;gt;'\
-                '&amp;lt;Mode passPhrase=&amp;quot;'\
-                    'DEFAULT-PWD-c4E10186eDA2cbfAEB73454E52C09eDFCBEAC50a2fde2460Dd41&amp;quot;&amp;gt;WPA2-AES'\
-                '&amp;lt;/Mode&amp;gt;'\
-                '&amp;lt;/wirelessSecurity&amp;gt;'\
-                '&amp;lt;/wirelessProfile&amp;gt;'\
-                    '&quot;/&gt;'\
-                    '&lt;DaylightSaving val=&quot;0&quot;/&gt;'\
-                    '&lt;IANAName val=&quot;&quot;/&gt;'\
-                    '&lt;LEDConfig val=&quot;&amp;lt;LEDConfig&amp;gt;'\
-                '&amp;lt;led&amp;gt;'\
-                '&amp;lt;name&amp;gt;MODE&amp;lt;/name&amp;gt;'\
-                '&amp;lt;brightness&amp;gt;100&amp;lt;/brightness&amp;gt;'\
-                '&amp;lt;/led&amp;gt;'\
-                '&amp;lt;led&amp;gt;'\
-                '&amp;lt;name&amp;gt;NETWORK&amp;lt;/name&amp;gt;'\
-                '&amp;lt;brightness&amp;gt;100&amp;lt;/brightness&amp;gt;'\
-                '&amp;lt;/led&amp;gt;'\
-                '&amp;lt;led&amp;gt;'\
-                '&amp;lt;name&amp;gt;MUTED&amp;lt;/name&amp;gt;'\
-                '&amp;lt;brightness&amp;gt;100&amp;lt;/brightness&amp;gt;'\
-                '&amp;lt;/led&amp;gt;'\
-                '&amp;lt;led&amp;gt;'\
-                '&amp;lt;name&amp;gt;REAR_STATUS&amp;lt;/name&amp;gt;'\
-                '&amp;lt;brightness&amp;gt;100&amp;lt;/brightness&amp;gt;'\
-                '&amp;lt;/led&amp;gt;'\
-                '&amp;lt;/LEDConfig&amp;gt;&quot;/&gt;'\
-                '&lt;NetworkConfigurationList val=&quot;&amp;lt;listNetworkConfigurations&amp;gt;'\
-                '&amp;lt;networkConfiguration id=&amp;quot;1&amp;quot; '\
-                    'dhcpOn=&amp;quot;0&amp;quot; enabled=&amp;quot;true&amp;quot;&amp;gt;'\
-                '&amp;lt;Name&amp;gt;eth0&amp;lt;/Name&amp;gt;'\
-                '&amp;lt;Type&amp;gt;LAN&amp;lt;/Type&amp;gt;'\
-                '&amp;lt;IP&amp;gt;10.42.12.12&amp;lt;/IP&amp;gt;'\
-                '&amp;lt;Netmask&amp;gt;255.255.255.0&amp;lt;/Netmask&amp;gt;'\
-                '&amp;lt;Gateway&amp;gt;10.42.12.1&amp;lt;/Gateway&amp;gt;'\
-                '&amp;lt;DNS1&amp;gt;10.42.12.1&amp;lt;/DNS1&amp;gt;'\
-                '&amp;lt;DNS2&amp;gt;0.0.0.0&amp;lt;/DNS2&amp;gt;'\
-                '&amp;lt;DNS3&amp;gt;0.0.0.0&amp;lt;/DNS3&amp;gt;'\
-                '&amp;lt;gwMac&amp;gt;000000000000&amp;lt;/gwMac&amp;gt;'\
-                '&amp;lt;/networkConfiguration&amp;gt;'\
-                '&amp;lt;networkConfiguration id=&amp;quot;2&amp;quot; dhcpOn=&amp;quot;1&amp;quot;'\
-                    'enabled=&amp;quot;true&amp;quot;&amp;gt;'\
-                '&amp;lt;Name&amp;gt;wlan0&amp;lt;/Name&amp;gt;'\
-                '&amp;lt;Type&amp;gt;WLAN&amp;lt;/Type&amp;gt;'\
-                '&amp;lt;IP&amp;gt;0.0.0.0&amp;lt;/IP&amp;gt;'\
-                '&amp;lt;Netmask&amp;gt;0.0.0.0&amp;lt;/Netmask&amp;gt;'\
-                '&amp;lt;Gateway&amp;gt;0.0.0.0&amp;lt;/Gateway&amp;gt;'\
-                '&amp;lt;DNS1&amp;gt;0.0.0.0&amp;lt;/DNS1&amp;gt;'\
-                '&amp;lt;DNS2&amp;gt;0.0.0.0&amp;lt;/DNS2&amp;gt;'\
-                '&amp;lt;DNS3&amp;gt;0.0.0.0&amp;lt;/DNS3&amp;gt;'\
-                '&amp;lt;gwMac&amp;gt;'\
-                '&amp;lt;/gwMac&amp;gt;'\
-                '&amp;lt;wirelessProfile SSID=&amp;quot;DEFAULT-SSID-8e09dfb09df4FBfa996&amp;quot;&amp;gt;'\
-                '&amp;lt;wirelessSecurity enabled=&amp;quot;true&amp;quot;&amp;gt;'\
-                '&amp;lt;Mode passPhrase='\
-                    '&amp;quot;DEFAULT-PWD-c4E10186eDA2cbfAEB73454E52C09eDFCBEAC50a2fde2460Dd41&amp;quot;'\
-                    '&amp;gt;WPA2-AES&amp;lt;/Mode&amp;gt;'\
-                '&amp;lt;/wirelessSecurity&amp;gt;'\
-                '&amp;lt;/wirelessProfile&amp;gt;'\
-                '&amp;lt;/networkConfiguration&amp;gt;'\
-                '&amp;lt;/listNetworkConfigurations&amp;gt;&quot;/&gt;'\
-                    '&lt;NetworkShareConfig val=&quot;&amp;lt;NetworkShareConfig&amp;gt;'\
-                '&amp;lt;/NetworkShareConfig&amp;gt;&quot;/&gt;'\
-                    '&lt;SessionId val=&quot;&quot;/&gt;'\
-                    '&lt;SurroundSpeakerConfig val=&quot;&amp;lt;SurroundSpeakerConfig&amp;gt;'\
-                '&amp;lt;Front&amp;gt;'\
-                '&amp;lt;enabled&amp;gt;1&amp;lt;/enabled&amp;gt;'\
-                '&amp;lt;crossover&amp;gt;0&amp;lt;/crossover&amp;gt;'\
-                '&amp;lt;Right&amp;gt;'\
-                '&amp;lt;distance&amp;gt;12&amp;lt;/distance&amp;gt;'\
-                '&amp;lt;level&amp;gt;12&amp;lt;/level&amp;gt;'\
-                '&amp;lt;test_tone&amp;gt;0&amp;lt;/test_tone&amp;gt;'\
-                '&amp;lt;/Right&amp;gt;'\
-                '&amp;lt;Left&amp;gt;'\
-                '&amp;lt;distance&amp;gt;12&amp;lt;/distance&amp;gt;'\
-                '&amp;lt;level&amp;gt;12&amp;lt;/level&amp;gt;'\
-                '&amp;lt;test_tone&amp;gt;0&amp;lt;/test_tone&amp;gt;'\
-                '&amp;lt;/Left&amp;gt;'\
-                '&amp;lt;/Front&amp;gt;'\
-                '&amp;lt;Center&amp;gt;'\
-                '&amp;lt;enabled&amp;gt;0&amp;lt;/enabled&amp;gt;'\
-                '&amp;lt;crossover&amp;gt;0&amp;lt;/crossover&amp;gt;'\
-                '&amp;lt;Center&amp;gt;'\
-                '&amp;lt;distance&amp;gt;12&amp;lt;/distance&amp;gt;'\
-                '&amp;lt;level&amp;gt;12&amp;lt;/level&amp;gt;'\
-                '&amp;lt;test_tone&amp;gt;0&amp;lt;/test_tone&amp;gt;'\
-                '&amp;lt;/Center&amp;gt;'\
-                '&amp;lt;/Center&amp;gt;'\
-                '&amp;lt;Subwoofer&amp;gt;'\
-                '&amp;lt;enabled&amp;gt;0&amp;lt;/enabled&amp;gt;'\
-                '&amp;lt;lowpass&amp;gt;250&amp;lt;/lowpass&amp;gt;'\
-                '&amp;lt;phase&amp;gt;0&amp;lt;/phase&amp;gt;'\
-                '&amp;lt;Subwoofer&amp;gt;'\
-                '&amp;lt;distance&amp;gt;12&amp;lt;/distance&amp;gt;'\
-                '&amp;lt;level&amp;gt;12&amp;lt;/level&amp;gt;'\
-                '&amp;lt;test_tone&amp;gt;0&amp;lt;/test_tone&amp;gt;'\
-                '&amp;lt;/Subwoofer&amp;gt;'\
-                '&amp;lt;/Subwoofer&amp;gt;'\
-                '&amp;lt;Rear&amp;gt;'\
-                '&amp;lt;enabled&amp;gt;0&amp;lt;/enabled&amp;gt;'\
-                '&amp;lt;crossover&amp;gt;0&amp;lt;/crossover&amp;gt;'\
-                '&amp;lt;surround_mode&amp;gt;OFF&amp;lt;/surround_mode&amp;gt;'\
-                '&amp;lt;Right&amp;gt;'\
-                '&amp;lt;distance&amp;gt;10&amp;lt;/distance&amp;gt;'\
-                '&amp;lt;level&amp;gt;12&amp;lt;/level&amp;gt;'\
-                '&amp;lt;test_tone&amp;gt;0&amp;lt;/test_tone&amp;gt;'\
-                '&amp;lt;/Right&amp;gt;'\
-                '&amp;lt;Left&amp;gt;'\
-                '&amp;lt;distance&amp;gt;10&amp;lt;/distance&amp;gt;'\
-                '&amp;lt;level&amp;gt;12&amp;lt;/level&amp;gt;'\
-                '&amp;lt;test_tone&amp;gt;0&amp;lt;/test_tone&amp;gt;'\
-                '&amp;lt;/Left&amp;gt;'\
-                '&amp;lt;/Rear&amp;gt;'\
-                '&amp;lt;DistUnit&amp;gt;m&amp;lt;/DistUnit&amp;gt;'\
-                '&amp;lt;/SurroundSpeakerConfig&amp;gt;&quot;/&gt;'\
-                    '&lt;TimeZone val=&quot;(GMT-8:00)&quot;/&gt;'\
-                    '&lt;UpdateAction val=&quot;UPDATE_ACTION_NONE&quot;/&gt;'\
-                    '&lt;UpdateLevel val=&quot;0&quot;/&gt;'\
-                    '&lt;UpgradeProgress val=&quot;0&quot;/&gt;'\
-                    '&lt;UpgradeStatus val=&quot;UPGRADE_CURRENT&quot;/&gt;'\
-                    '&lt;VolumeLimit val=&quot;100&quot;/&gt;'\
-                    '&lt;WifiApSsid val=&quot;&quot;/&gt;'\
-                    '&lt;WirelessState val=&quot;LINK_DOWN&quot;/&gt;'\
-                    '&lt;/Event&gt;</CurrentState>'
+        rtn = '<CurrentState>&lt;Event xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/ACT/&quot;'\
+            '&gt;&lt;ActiveInterface val=&quot;1&quot;/'\
+            '&gt;&lt;FriendlyName val=&quot;Kitchen&quot;/'\
+            '&gt;&lt;HEOSNetId val=&quot;DEFAULT-SSID-8e09dfb09df4FBfa996&quot;/'\
+            '&gt;&lt;LastDiscoveredDevice val=&quot;&quot;/'\
+            '&gt;&lt;P2PMode val=&quot;NONE&quot;/'\
+            '&gt;&lt;Transcode val=&quot;1&quot;/'\
+            '&gt;&lt;AudioConfig val=&quot;&amp;lt;AudioConfig'\
+              '&amp;gt;&amp;lt;highpass'\
+              '&amp;gt;0&amp;lt;/highpass'\
+              '&amp;gt;&amp;lt;lowpass'\
+              '&amp;gt;80&amp;lt;/lowpass'\
+              '&amp;gt;&amp;lt;subwooferEnable'\
+              '&amp;gt;0&amp;lt;/subwooferEnable'\
+              '&amp;gt;&amp;lt;outputMode'\
+              '&amp;gt;STEREO&amp;lt;/outputMode'\
+              '&amp;gt;&amp;lt;ampBridged'\
+              '&amp;gt;0&amp;lt;/ampBridged'\
+              '&amp;gt;&amp;lt;soundMode'\
+              '&amp;gt;STEREO&amp;lt;/soundMode'\
+              '&amp;gt;&amp;lt;impedance'\
+              '&amp;gt;&amp;lt;/impedance'\
+              '&amp;gt;&amp;lt;ampPower'\
+              '&amp;gt;1&amp;lt;/ampPower'\
+              '&amp;gt;&amp;lt;availableSoundModes'\
+              '&amp;gt;MOVIE_NORMAL,MUSIC_NORMAL&amp;lt;/availableSoundModes'\
+              '&amp;gt;&amp;lt;sourceDirect'\
+              '&amp;gt;0&amp;lt;/sourceDirect'\
+              '&amp;gt;&amp;lt;bassBoost'\
+              '&amp;gt;0&amp;lt;/bassBoost'\
+              '&amp;gt;&amp;lt;speakerOption'\
+              '&amp;gt;&amp;lt;/speakerOption'\
+              '&amp;gt;&amp;lt;/AudioConfig'\
+              '&amp;gt;&quot;/'\
+            '&gt;&lt;BTConfig val=&quot;&amp;lt;BluetoothStatus'\
+              '&amp;gt;&amp;lt;connectedStatus'\
+              '&amp;gt;DISCONNECTED&amp;lt;/connectedStatus'\
+              '&amp;gt;&amp;lt;connectedDevice'\
+              '&amp;gt;&amp;lt;/connectedDevice'\
+              '&amp;gt;&amp;lt;pairedDevices'\
+              '&amp;gt;&amp;lt;/pairedDevices'\
+              '&amp;gt;&amp;lt;hasPairedDevices'\
+              '&amp;gt;0&amp;lt;/hasPairedDevices'\
+              '&amp;gt;&amp;lt;/BluetoothStatus'\
+              '&amp;gt;&quot;/'\
+            '&gt;&lt;ConfigurationStatus val=&quot;0&quot;/'\
+            '&gt;&lt;UpgradeComponentInstallProgress val=&quot;0&quot;/'\
+            '&gt;&lt;CurrentLanguageLocale val=&quot;en_US&quot;/'\
+            '&gt;&lt;CurrentWirelessProfile val=&quot;&amp;lt;wirelessProfile SSID=&amp;quot;DEFAULT-SSID-8e09dfb09df4FBfa996&amp;quot;'\
+              '&amp;gt;&amp;lt;wirelessSecurity enabled=&amp;quot;true&amp;quot;'\
+              '&amp;gt;&amp;lt;Mode passPhrase=&amp;quot;DEFAULT-PWD-c4E10186eDA2cbfAEB73454E52C09eDFCBEAC50a2fde2460Dd41&amp;quot;'\
+              '&amp;gt;WPA2-AES&amp;lt;/Mode'\
+              '&amp;gt;&amp;lt;/wirelessSecurity'\
+              '&amp;gt;&amp;lt;/wirelessProfile'\
+              '&amp;gt;&quot;/'\
+            '&gt;&lt;DaylightSaving val=&quot;0&quot;/'\
+            '&gt;&lt;IANAName val=&quot;&quot;/'\
+            '&gt;&lt;LEDConfig val=&quot;&amp;lt;LEDConfig'\
+              '&amp;gt;&amp;lt;led'\
+              '&amp;gt;&amp;lt;name'\
+              '&amp;gt;MODE&amp;lt;/name'\
+              '&amp;gt;&amp;lt;brightness'\
+              '&amp;gt;100&amp;lt;/brightness'\
+              '&amp;gt;&amp;lt;/led'\
+              '&amp;gt;&amp;lt;led'\
+              '&amp;gt;&amp;lt;name'\
+              '&amp;gt;NETWORK&amp;lt;/name'\
+              '&amp;gt;&amp;lt;brightness'\
+              '&amp;gt;100&amp;lt;/brightness'\
+              '&amp;gt;&amp;lt;/led'\
+              '&amp;gt;&amp;lt;led'\
+              '&amp;gt;&amp;lt;name'\
+              '&amp;gt;MUTED&amp;lt;/name'\
+              '&amp;gt;&amp;lt;brightness'\
+              '&amp;gt;100&amp;lt;/brightness'\
+              '&amp;gt;&amp;lt;/led'\
+              '&amp;gt;&amp;lt;led'\
+              '&amp;gt;&amp;lt;name'\
+              '&amp;gt;REAR_STATUS&amp;lt;/name'\
+              '&amp;gt;&amp;lt;brightness'\
+              '&amp;gt;100&amp;lt;/brightness'\
+              '&amp;gt;&amp;lt;/led'\
+              '&amp;gt;&amp;lt;/LEDConfig'\
+              '&amp;gt;&quot;/'\
+            '&gt;&lt;NetworkConfigurationList val=&quot;&amp;lt;listNetworkConfigurations'\
+              '&amp;gt;&amp;lt;networkConfiguration id=&amp;quot;1&amp;quot; '\
+                    'dhcpOn=&amp;quot;0&amp;quot; enabled=&amp;quot;true&amp;quot;'\
+              '&amp;gt;&amp;lt;Name'\
+              '&amp;gt;eth0&amp;lt;/Name'\
+              '&amp;gt;&amp;lt;Type'\
+              '&amp;gt;LAN&amp;lt;/Type'\
+              '&amp;gt;&amp;lt;IP'\
+              '&amp;gt;10.42.12.12&amp;lt;/IP'\
+              '&amp;gt;&amp;lt;Netmask'\
+              '&amp;gt;255.255.255.0&amp;lt;/Netmask'\
+              '&amp;gt;&amp;lt;Gateway'\
+              '&amp;gt;10.42.12.1&amp;lt;/Gateway'\
+              '&amp;gt;&amp;lt;DNS1'\
+              '&amp;gt;10.42.12.1&amp;lt;/DNS1'\
+              '&amp;gt;&amp;lt;DNS2'\
+              '&amp;gt;0.0.0.0&amp;lt;/DNS2'\
+              '&amp;gt;&amp;lt;DNS3'\
+              '&amp;gt;0.0.0.0&amp;lt;/DNS3'\
+              '&amp;gt;&amp;lt;gwMac'\
+              '&amp;gt;000000000000&amp;lt;/gwMac'\
+              '&amp;gt;&amp;lt;/networkConfiguration'\
+              '&amp;gt;&amp;lt;networkConfiguration id=&amp;quot;2&amp;quot; '\
+                    'dhcpOn=&amp;quot;1&amp;quot; enabled=&amp;quot;true&amp;quot;'\
+              '&amp;gt;&amp;lt;Name'\
+              '&amp;gt;wlan0&amp;lt;/Name'\
+              '&amp;gt;&amp;lt;Type'\
+              '&amp;gt;WLAN&amp;lt;/Type'\
+              '&amp;gt;&amp;lt;IP'\
+              '&amp;gt;0.0.0.0&amp;lt;/IP'\
+              '&amp;gt;&amp;lt;Netmask'\
+              '&amp;gt;0.0.0.0&amp;lt;/Netmask'\
+              '&amp;gt;&amp;lt;Gateway'\
+              '&amp;gt;0.0.0.0&amp;lt;/Gateway'\
+              '&amp;gt;&amp;lt;DNS1'\
+              '&amp;gt;0.0.0.0&amp;lt;/DNS1'\
+              '&amp;gt;&amp;lt;DNS2'\
+              '&amp;gt;0.0.0.0&amp;lt;/DNS2'\
+              '&amp;gt;&amp;lt;DNS3'\
+              '&amp;gt;0.0.0.0&amp;lt;/DNS3'\
+              '&amp;gt;&amp;lt;gwMac'\
+              '&amp;gt;&amp;lt;/gwMac'\
+              '&amp;gt;&amp;lt;wirelessProfile SSID=&amp;quot;DEFAULT-SSID-8e09dfb09df4FBfa996&amp;quot;'\
+              '&amp;gt;&amp;lt;wirelessSecurity enabled=&amp;quot;true&amp;quot;'\
+              '&amp;gt;&amp;lt;Mode passPhrase=&amp;quot;'\
+                    'DEFAULT-PWD-c4E10186eDA2cbfAEB73454E52C09eDFCBEAC50a2fde2460Dd41&amp;quot;'\
+              '&amp;gt;WPA2-AES&amp;lt;/Mode'\
+              '&amp;gt;&amp;lt;/wirelessSecurity'\
+              '&amp;gt;&amp;lt;/wirelessProfile'\
+              '&amp;gt;&amp;lt;/networkConfiguration'\
+              '&amp;gt;&amp;lt;/listNetworkConfigurations'\
+              '&amp;gt;&quot;/'\
+            '&gt;&lt;NetworkShareConfig val=&quot;&amp;lt;NetworkShareConfig'\
+              '&amp;gt;&amp;lt;/NetworkShareConfig'\
+              '&amp;gt;&quot;/'\
+            '&gt;&lt;SessionId val=&quot;&quot;/'\
+            '&gt;&lt;SurroundSpeakerConfig val=&quot;&amp;lt;SurroundSpeakerConfig'\
+              '&amp;gt;&amp;lt;Front'\
+              '&amp;gt;&amp;lt;enabled'\
+              '&amp;gt;1&amp;lt;/enabled'\
+              '&amp;gt;&amp;lt;crossover'\
+              '&amp;gt;0&amp;lt;/crossover'\
+              '&amp;gt;&amp;lt;Right'\
+              '&amp;gt;&amp;lt;distance'\
+              '&amp;gt;12&amp;lt;/distance'\
+              '&amp;gt;&amp;lt;level'\
+              '&amp;gt;12&amp;lt;/level'\
+              '&amp;gt;&amp;lt;test_tone'\
+              '&amp;gt;0&amp;lt;/test_tone'\
+              '&amp;gt;&amp;lt;/Right'\
+              '&amp;gt;&amp;lt;Left'\
+              '&amp;gt;&amp;lt;distance'\
+              '&amp;gt;12&amp;lt;/distance'\
+              '&amp;gt;&amp;lt;level'\
+              '&amp;gt;12&amp;lt;/level'\
+              '&amp;gt;&amp;lt;test_tone'\
+              '&amp;gt;0&amp;lt;/test_tone'\
+              '&amp;gt;&amp;lt;/Left'\
+              '&amp;gt;&amp;lt;/Front'\
+              '&amp;gt;&amp;lt;Center'\
+              '&amp;gt;&amp;lt;enabled'\
+              '&amp;gt;0&amp;lt;/enabled'\
+              '&amp;gt;&amp;lt;crossover'\
+              '&amp;gt;0&amp;lt;/crossover'\
+              '&amp;gt;&amp;lt;Center'\
+              '&amp;gt;&amp;lt;distance'\
+              '&amp;gt;12&amp;lt;/distance'\
+              '&amp;gt;&amp;lt;level'\
+              '&amp;gt;12&amp;lt;/level'\
+              '&amp;gt;&amp;lt;test_tone'\
+              '&amp;gt;0&amp;lt;/test_tone'\
+              '&amp;gt;&amp;lt;/Center'\
+              '&amp;gt;&amp;lt;/Center'\
+              '&amp;gt;&amp;lt;Subwoofer'\
+              '&amp;gt;&amp;lt;enabled'\
+              '&amp;gt;0&amp;lt;/enabled'\
+              '&amp;gt;&amp;lt;lowpass'\
+              '&amp;gt;250&amp;lt;/lowpass'\
+              '&amp;gt;&amp;lt;phase'\
+              '&amp;gt;0&amp;lt;/phase'\
+              '&amp;gt;&amp;lt;Subwoofer'\
+              '&amp;gt;&amp;lt;distance'\
+              '&amp;gt;12&amp;lt;/distance'\
+              '&amp;gt;&amp;lt;level'\
+              '&amp;gt;12&amp;lt;/level'\
+              '&amp;gt;&amp;lt;test_tone'\
+              '&amp;gt;0&amp;lt;/test_tone'\
+              '&amp;gt;&amp;lt;/Subwoofer'\
+              '&amp;gt;&amp;lt;/Subwoofer'\
+              '&amp;gt;&amp;lt;Rear'\
+              '&amp;gt;&amp;lt;enabled'\
+              '&amp;gt;0&amp;lt;/enabled'\
+              '&amp;gt;&amp;lt;crossover'\
+              '&amp;gt;0&amp;lt;/crossover'\
+              '&amp;gt;&amp;lt;surround_mode'\
+              '&amp;gt;OFF&amp;lt;/surround_mode'\
+              '&amp;gt;&amp;lt;Right'\
+              '&amp;gt;&amp;lt;distance'\
+              '&amp;gt;10&amp;lt;/distance'\
+              '&amp;gt;&amp;lt;level'\
+              '&amp;gt;12&amp;lt;/level'\
+              '&amp;gt;&amp;lt;test_tone'\
+              '&amp;gt;0&amp;lt;/test_tone'\
+              '&amp;gt;&amp;lt;/Right'\
+              '&amp;gt;&amp;lt;Left'\
+              '&amp;gt;&amp;lt;distance'\
+              '&amp;gt;10&amp;lt;/distance'\
+              '&amp;gt;&amp;lt;level'\
+              '&amp;gt;12&amp;lt;/level'\
+              '&amp;gt;&amp;lt;test_tone'\
+              '&amp;gt;0&amp;lt;/test_tone'\
+              '&amp;gt;&amp;lt;/Left'\
+              '&amp;gt;&amp;lt;/Rear'\
+              '&amp;gt;&amp;lt;DistUnit'\
+              '&amp;gt;m&amp;lt;/DistUnit'\
+              '&amp;gt;&amp;lt;/SurroundSpeakerConfig'\
+              '&amp;gt;&quot;/'\
+            '&gt;&lt;TimeZone val=&quot;(GMT-8:00)&quot;/'\
+            '&gt;&lt;UpdateAction val=&quot;UPDATE_ACTION_NONE&quot;/'\
+            '&gt;&lt;UpdateLevel val=&quot;0&quot;/'\
+            '&gt;&lt;UpgradeProgress val=&quot;0&quot;/'\
+            '&gt;&lt;UpgradeStatus val=&quot;UPGRADE_CURRENT&quot;/'\
+            '&gt;&lt;VolumeLimit val=&quot;100&quot;/'\
+            '&gt;&lt;WifiApSsid val=&quot;&quot;/'\
+            '&gt;&lt;WirelessState val=&quot;LINK_DOWN&quot;/'\
+            '&gt;&lt;/Event'\
+            '&gt;</CurrentState>'
 
         return rtn
 

@@ -27,10 +27,13 @@ from collections import OrderedDict
 import unittest
 
 class TestShoeCmnd():
-    def __init__(self, cmndName, urn, path):
+    def __init__(self, cmndName, urn, path, svcInst):
         self.name=cmndName
         self.urn=urn
         self.path=path
+        self.svc=svcInst
+        self.svcName=svcInst.name
+        self.devName=svcInst.devName
 
         self.args=OrderedDict()
 
@@ -123,14 +126,20 @@ class TestShoeCmnd():
         return rtnBody
 
 class CmndTest(unittest.TestCase):
+    class CmndTestSvc():
+        def __init__(self):
+            self.name="testCmnd"
+            self.devName="testDevName"
+
     def setUp(self):
+        svcInst=self.CmndTestSvc()
         self.maxDiff=None
 
         self.cmnd='CreateGroup'
         self.urn='urn:schemas-denon-com:service:GroupControl:1'
         self.path='/upnp/control/AiosServicesDvc/GroupControl'
 
-        self.shoeCmnd=TestShoeCmnd(self.cmnd, self.urn, self.path)
+        self.shoeCmnd=TestShoeCmnd(self.cmnd, self.urn, self.path, svcInst)
 
         self.shoeCmnd.args = OrderedDict([ \
                         ('GroupFriendlyName', 'Jam'),\
@@ -191,11 +200,12 @@ class CmndTest(unittest.TestCase):
 class CmndTestGetVol(CmndTest):
     def setUp(self):
         self.maxDiff=None
+        svcInst=self.CmndTestSvc()
 
         self.cmnd='GetGroupVolume'
         self.urn='urn:schemas-denon-com:service:GroupControl:1'
         self.path='/upnp/control/AiosServicesDvc/GroupControl'
-        self.shoeCmnd=TestShoeCmnd(self.cmnd, self.urn, self.path)
+        self.shoeCmnd=TestShoeCmnd(self.cmnd, self.urn, self.path, svcInst)
 
         self.shoeCmnd.argsCfg= [\
                             {'relatedStateVariable': 'GroupUUID', 'direction': 'in', 'name': 'GroupUUID',\

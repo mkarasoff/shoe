@@ -27,6 +27,7 @@
 #
 ############################################################################
 from shoeCfgXml import *
+from shoeCmnd import *
 import copy
 
 class ShoeSvc(ShoeCfgXml):
@@ -65,53 +66,69 @@ class ShoeSvc(ShoeCfgXml):
         self._cmndTbl=None
 
         self.path=None
-        self.uri=None
+        self.urn=None
 
         self.name=None
         return
 
     def setUp(self):
+
         if self._devInst is not None:
             self.devName=self._devInst.name
 
         print(self.cfg)
 
         self.path=self.cfg[self.PATH_KEY]
-        self.uri=self.cfg[self.URI_KEY]
+
+        self.urn=self.cfg[self.URI_KEY]
+        self.log.debug("Service Uri: %s" % self.urn)
+
         self.name= self._getName(self.cfg)
+        self.log.debug("Service Name: %s, Dev Name %s" % (self.name, self.devName))
 
         try:
             if self._scpd is None:
                 self._scpd=self._getScpd(self.cfg)
         except KeyError as e:
-            log.info("No SCPD for this service", self.name)
+            log.info("No SCPD for this service %s" % self.name)
             log.debug(str(e))
             raise ShoeSvcNoScpd(errStr)
         except:
             raise
 
+        #self.log.debug("%s SCPD: %s" %
+        #                (self.name, self._scpd))
+
         try:
             self._stateVarTbl=self._getStateVarTbl(self._scpd)
         except ShoeSvcNoTbl:
             self._stateVarTbl={}
-            log.info("No var table for service", self.name)
+            log.info("No var table for service %s" % self.name)
         except:
             raise
+
+        #self.log.debug("%s State Var Tbl: %s" %
+        #                (self.name, self._stateVarTbl))
 
         try:
             self._cmndTbl=self._getCmndTbl(self._scpd)
         except ShoeSvcNoTbl:
             self._cmndTbl={}
-            log.info("No cmnd table for service", self.name)
+            log.info("No cmnd table for service %s" % self.name)
         except:
             raise
+
+        #self.log.debug("%s Service Commands: %s" %
+        #                (self.name, self._cmndTbl))
 
         return
 
     @property
     def cmnds(self):
+        self.log.debug("cmnds: %s", self._cmndTbl)
+
         if self._cmndTbl is None:
-            raise ShoeSvcNoTbl("Service not properly initialized")
+            raise ShoeSvcNoTbl("Service %s not properly initialized" % self.name)
         else:
             return list(self._cmndTbl.keys())
 
@@ -152,13 +169,15 @@ class ShoeSvc(ShoeCfgXml):
     def sendCmnd(self, cmnd, args={}):
         argsCfg=self.getCmndArgsCfg(cmnd)
 
+        self.log.debug("Cmnd %s Args %s ArgsCfg %s", cmnd, args, argsCfg)
+
         shoeCmnd=ShoeCmnd(  host=self.host,
                             path=self.path,
                             urn=self.urn,
                             port=self.port,
 
                             cmnd=cmnd,
-                            args=args,
+                            argsIn=args,
                             argsCfg=argsCfg,
 
                             loglvl=self.loglvl)
@@ -186,7 +205,6 @@ class ShoeSvc(ShoeCfgXml):
                 cfg,
                 typeIdKey=SVCNAME_KEY,
                 typeIdTag=SVCNAME_TAG ):
-        self.log.debug(cfg)
 
         name=None
         cfgLine=[]

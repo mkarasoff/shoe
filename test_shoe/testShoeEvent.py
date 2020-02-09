@@ -35,8 +35,8 @@ import unittest
 import re
 
 class TestShoeEvent(TestShoeCmnd):
-    def __init__(self, cmndName, urn, path):
-        super().__init__(cmndName, urn, path)
+    def __init__(self, cmndName, urn, path, svcInst):
+        super().__init__(cmndName, urn, path, svcInst)
         self.fmtOutput=''
         self.eventRtnMsgBody='<CurrentState></CurrentState>'
         self.rtn=OrderedDict([('CurrentState', None),])
@@ -69,13 +69,20 @@ class TestShoeEvent(TestShoeCmnd):
         self.eventRtnMsgBody=msgBody
 
 class TestEvent(unittest.TestCase):
+    class CmndTestSvc():
+        def __init__(self):
+            self.name="testCmnd"
+            self.devName="testDevName"
+
     def setUp(self):
         self.urn='urn:schemas-denon-com:service:ZoneControl:2'
         self.path='/upnp/control/AiosServicesDvc/ZoneControl'
         self.maxDiff=None
 
+        svcInst=self.CmndTestSvc()
+
         self.cmnd='GetCurrentState'
-        self.tEvent=TestShoeEvent(self.cmnd, self.urn, self.path)
+        self.tEvent=TestShoeEvent(self.cmnd, self.urn, self.path, svcInst)
 
         self.rtnMsgBody='<CurrentState>&lt;Event xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/ZCS/&quot;&gt;&lt;'\
                 'ZoneConnectedList val=&quot;caf7916a94db1a1300800005cdfbb9c6,'\

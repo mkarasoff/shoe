@@ -23,9 +23,6 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ############################################################################
-from shoeSvcAct import *
-from shoeSvcGroup import *
-from shoeSvcZone import *
 from shoeMsg import *
 from shoeEventParser import *
 from collections import OrderedDict
@@ -49,6 +46,11 @@ class ShoeCmnd(ShoeMsg):
         self.argsIn = argsIn
         self.argsCfg = argsCfg
         self.cmndReply=None
+
+        self.log.debug("Cmnd %s" % cmnd)
+        self.log.debug("Args %s" % argsIn)
+        self.log.debug("ArgsCfg %s" % self.argsCfg)
+
         return
 
     def send(self):
@@ -58,6 +60,10 @@ class ShoeCmnd(ShoeMsg):
 
     def parse(self):
         msgReply = super().parse()
+
+        self.log.debug("Cmnd %s" % self.cmnd)
+        self.log.debug("Args %s" % self.args)
+        self.log.debug("ArgsCfg %s" % self.argsCfg)
 
         replyArgs=self._formatReply(msgReply.args, self.argsCfg)
 
@@ -70,9 +76,12 @@ class ShoeCmnd(ShoeMsg):
         return self.cmndReply
 
     def _formatReply(self, args, argsCfg):
+        self.log.debug("ArgsCfg %s" % self.argsCfg)
+
         replyArgsCfg={}
         for argCfg in argsCfg:
-            if argCfg['direction'] is 'out':
+            self.log.debug("ArgCfg: %s" % argCfg)
+            if argCfg['direction'] == 'out':
                 replyArgsCfg[argCfg['name']]=argCfg
 
         return self._formatArgs(args, replyArgsCfg,
@@ -81,9 +90,10 @@ class ShoeCmnd(ShoeMsg):
     def _formatCmnd(self, args, argsCfg):
         cmndArgsCfg=OrderedDict()
         for argCfg in argsCfg:
-            if argCfg['direction'] is 'in':
+            if argCfg['direction'] == 'in':
                 cmndArgsCfg[argCfg['name']]=argCfg
 
+        self.log.debug("CmndArgsCfg: %s" % cmndArgsCfg)
         return self._formatArgs(args, cmndArgsCfg,
                                 self._formatCmndArg)
 
@@ -109,15 +119,13 @@ class ShoeCmnd(ShoeMsg):
         return fmtArgs
 
     def _formatReplyArg(self, arg, argCfg):
-        if argCfg['direction'] is not 'out':
-            errMsg="Not Output Arg %s" % argCfg['name']
-            raise ShoeCmndErr(errMsg)
-
         stateCfg=argCfg['state']
         cfgArgType=stateCfg['dataType']
         event=stateCfg['@sendEvents']
         replyTrue=['true', 'True', 'TRUE', True]
         replyFalse=['false', 'False', 'FALSE', False]
+
+        self.log.debug("ArgType %s Event %s", cfgArgType, event)
 
         errMsg='Incorrect Type %s for reply arg %s' %\
                 (cfgArgType, arg)
@@ -125,7 +133,7 @@ class ShoeCmnd(ShoeMsg):
         if (cfgArgType == 'string'):
             if (type(arg) is not str):
                 raise ShoeCmndErr(errMsg)
-            if event is 'yes':
+            if event == 'yes':
                 eventParser=ShoeEventParser(arg, self.loglvl)
                 argRtn=eventParser.parse()
             else:
@@ -141,7 +149,7 @@ class ShoeCmnd(ShoeMsg):
 
         elif (cfgArgType[:2] == 'ui'):
             try:
-                argRtn=str(int(arg))
+                argRtn=int(arg)
             except ValueError:
                 raise ShoeCmndErr(errMsg)
             except:
@@ -151,9 +159,6 @@ class ShoeCmnd(ShoeMsg):
 
     def _formatCmndArg(self, argVal, argCfg):
         cmndArgs={}
-        if argCfg['direction'] is not 'in':
-            errMsg="No Input Arg %s" % argCfg['name']
-            raise ShoeCmndErr(errMsg)
 
         stateCfg=argCfg['state']
         cfgArgType=stateCfg['dataType']
@@ -239,48 +244,54 @@ class TestShoeCmnd(TestShoeHttp):
         self.port=60006
         self.host='127.0.0.1'
         self.testRootDev=TestRootDev()
-        self.testCmnds=self.testRootDev.cmnds
+        self.cmnds=self.testRootDev.cmnds
+        self.cmnd = None
         return
 
     def _sendTestMsgs(self):
         self.shoeCmnd = ShoeCmnd(host=self.host,
                                 path=self.path,
                                 urn=self.urn,
-                                cmnd=self.cmnd,
-                                argsIn=self.args,
-                                argsCfg=self.argsCfg,
+                                cmnd=self.cmnd.name,
+                                argsIn=self.cmnd.args,
+                                argsCfg=self.cmnd.argsCfg,
                                 loglvl=logging.DEBUG)
         self.shoeCmnd.send()
         self.shoeCmnd.parse()
-        self._checkMsg(self.testCmnd)
+        self._checkMsg(self.cmnd)
         return
 
 class TestShoeCmnds(TestShoeCmnd):
     def runTest(self):
-        for testCmnd in self.testCmnds:
+        for cmnd in self.cmnds:
+            self.cmnd = cmnd
             print("@@@@@@@@@@@@@@@@@@@@@@@ %s: Test %s @@@@@@@@@@@@@@@@@@@@@@@@@@@@@"\
-                    % (self.__class__.__name__, testCmnd.name))
-            self.httpTest(testCmnd)
+                    % (self.__class__.__name__, cmnd.name))
+            self.httpTest(cmnd)
             print("@@@@@@@@@@@@@@@@@@@@@ %s: Test Done %s @@@@@@@@@@@@@@@@@@@@@@@@"\
-                    % (self.__class__.__name__, testCmnd.name))
+                    % (self.__class__.__name__, cmnd.name))
 
             if self.FAST_TEST>0 and self.sendCnt > self.FAST_TEST:
                     break
 
         return
 
-    def _checkMsg(self, testCmnd):
-        self.assertEqual(self.shoeCmnd.cmnd, testCmnd.name, 'Parse error: cmnd')
-        self.assertEqual(self.shoeCmnd.urn, testCmnd.urn, 'Parse error: urn')
-        self.assertEqual(self.shoeCmnd.args, testCmnd.args, 'Parse error: urn')
-        self.assertEqual(self.srvRxMsg, testCmnd.msg)
-        self.assertEqual(self.srvRxHdr, testCmnd.hdr)
+    def _checkMsg(self, cmnd):
+        self.assertEqual(self.shoeCmnd.cmnd, cmnd.name, 'Parse error: cmnd')
+        self.assertEqual(self.shoeCmnd.urn, cmnd.urn, 'Parse error: urn')
+        self.assertEqual(self.shoeCmnd.args, cmnd.args, 'Parse error: urn')
+        self.assertEqual(self.srvRxMsg, cmnd.msg)
+        self.assertEqual(self.srvRxHdr, cmnd.hdr)
 
-        reply=self.shoeCmnd.reply
+        reply=self.shoeCmnd.cmndReply
 
-        self.assertEqual(reply.cmnd, testCmnd.name + "Response", 'ParseErr: cmnd')
-        self.assertEqual(reply.urn, testCmnd.urn, 'ParseErr: urn')
-        self.assertDictEqual(reply.args, testCmnd.msgReplyArgs, 'Parse error: args\r %s \r %s' %
-                (reply.args, testCmnd.msgReplyArgs) )
+        print("reply", reply.args)
+        print("expected", cmnd.rtn)
+
+        self.assertEqual(reply.cmnd, cmnd.name + "Response", 'ParseErr: cmnd')
+        self.assertEqual(reply.urn, cmnd.urn, 'ParseErr: urn')
+        self.assertDictEqual(reply.args, cmnd.rtn)
+        #self.assertDictEqual(reply.args, cmnd.msgReplyArgs, 'Parse error: args\r %s \r %s' %
+        #        (reply.args, cmnd.msgReplyArgs) )
 
         return

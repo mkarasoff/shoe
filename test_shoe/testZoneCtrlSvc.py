@@ -43,7 +43,7 @@ class TestZoneCtrlSvc(TestShoeSvc):
                             svcCfg=svcCfg)
 
 ################################################################################
-        cmnd=TestShoeEvent('GetCurrentState', self.urn, self.cmndPath)
+        cmnd=TestShoeEvent('GetCurrentState', self.urn, self.cmndPath, self)
 
         cmnd.rtnMsgBody='<CurrentState>&lt;Event xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/ZCS/&quot;&gt;&lt;'\
                 'ZoneConnectedList val=&quot;caf7916a94db1a1300800005cdfbb9c6,'\
@@ -58,29 +58,29 @@ class TestZoneCtrlSvc(TestShoeSvc):
         cmnd.rtn=OrderedDict([('CurrentState',
             OrderedDict([\
                 ('ZoneConnectedList',\
-                    b'caf7916a94db1a1300800005cdfbb9c6,f3ddb59f3e691f1e00800005cdff1706'),\
-                ('ZoneFriendlyName', b'Family Room'), \
+                    'caf7916a94db1a1300800005cdfbb9c6,f3ddb59f3e691f1e00800005cdff1706'),\
+                ('ZoneFriendlyName', 'Family Room'), \
                 ('ZoneMemberList', \
-                    b'caf7916a94db1a1300800005cdfbb9c6,f3ddb59f3e691f1e00800005cdff1706'), \
+                    'caf7916a94db1a1300800005cdfbb9c6,f3ddb59f3e691f1e00800005cdff1706'), \
                 ('ZoneMemberStatusList', \
-                    b'caf7916a94db1a1300800005cdfbb9c6,ZONE_LEAD,f3ddb59f3e691f1e00800005cdff1706,ZONE_SLAVE'), \
-                ('ZoneMute', b'0'), \
-                ('ZoneStatus', b'ZONE_LEAD'), \
-                ('ZoneVolume', b'31'), \
-                ('ZoneMinimise', b'0'), \
-                ('ZoneUUID', b'17083c46d003001000800005cdfbb9c6')]))])
+                    'caf7916a94db1a1300800005cdfbb9c6,ZONE_LEAD,f3ddb59f3e691f1e00800005cdff1706,ZONE_SLAVE'), \
+                ('ZoneMute', '0'), \
+                ('ZoneStatus', 'ZONE_LEAD'), \
+                ('ZoneVolume', '31'), \
+                ('ZoneMinimise', '0'), \
+                ('ZoneUUID', '17083c46d003001000800005cdfbb9c6')]))])
 
         cmnd.fmtOutput=\
-            "ZoneConnectedList : b'caf7916a94db1a1300800005cdfbb9c6,f3ddb59f3e691f1e00800005cdff1706'\n"\
-            "ZoneFriendlyName : b'Family Room'\n"\
-            "ZoneMemberList   : b'caf7916a94db1a1300800005cdfbb9c6,f3ddb59f3e691f1e00800005cdff1706'\n"\
+            "ZoneConnectedList : 'caf7916a94db1a1300800005cdfbb9c6,f3ddb59f3e691f1e00800005cdff1706'\n"\
+            "ZoneFriendlyName : 'Family Room'\n"\
+            "ZoneMemberList   : 'caf7916a94db1a1300800005cdfbb9c6,f3ddb59f3e691f1e00800005cdff1706'\n"\
             "ZoneMemberStatusList : "\
             "b'caf7916a94db1a1300800005cdfbb9c6,ZONE_LEAD,f3ddb59f3e691f1e00800005cdff1706,ZONE_SLAVE'\n"\
-            "ZoneMute         : b'0'\n"\
-            "ZoneStatus       : b'ZONE_LEAD'\n"\
-            "ZoneVolume       : b'31'\n"\
-            "ZoneMinimise     : b'0'\n"\
-            "ZoneUUID         : b'17083c46d003001000800005cdfbb9c6'\n"\
+            "ZoneMute         : '0'\n"\
+            "ZoneStatus       : 'ZONE_LEAD'\n"\
+            "ZoneVolume       : '31'\n"\
+            "ZoneMinimise     : '0'\n"\
+            "ZoneUUID         : '17083c46d003001000800005cdfbb9c6'\n"\
 
         cmnd.argsCfg= [\
                         {'relatedStateVariable': 'LastChange', 'direction': 'out', 'name': 'CurrentState',\

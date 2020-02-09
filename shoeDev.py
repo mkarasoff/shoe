@@ -53,6 +53,8 @@ class ShoeDev(ShoeSvc):
 
         self.name= self._getName(self.cfg)
 
+        self.log.debug("Dev Name %s" % self.name)
+
         try:
             self.uuid=self._getUuid(self.cfg)
         except ShoeDevUnknownParam as e:
@@ -63,6 +65,8 @@ class ShoeDev(ShoeSvc):
         except:
             raise
 
+        self.log.debug("UUID %s" % self.uuid)
+
         try:
             self._svcs=self._getSvcs(self.cfg)
         except ShoeDevNoSvcs as e:
@@ -71,6 +75,8 @@ class ShoeDev(ShoeSvc):
             self._svcs={}
         except:
             raise
+
+        self.log.debug("%s Services %s" % (self.name, self._svcs))
         return
 
     def sendCmnd(self, cmnd, args, svcName=None):
@@ -107,6 +113,9 @@ class ShoeDev(ShoeSvc):
         return svcNames
 
     def getSvc(self, svcName):
+        self.log.debug("%s Service Name Req: %s" %(self.name, svcName))
+        self.log.debug("%s Services: %s" %(self.name, self._svcs))
+
         try:
             svc=self._svcs[svcName]
         except TypeError:
@@ -117,7 +126,7 @@ class ShoeDev(ShoeSvc):
         except:
             raise
 
-        return dev
+        return svc
 
     def _getSvcs(self, cfg):
         svcs={}

@@ -65,6 +65,8 @@ class ShoeMsg():
         return
 
     def send(self):
+        self.log.debug("Cmnd %s, urn %s, args %s",
+                        self.cmnd, self.urn, self.args)
         shoexml = ShoeMsgXml(cmnd=self.cmnd,
                             urn=self.urn,
                             args=self.args)
@@ -165,7 +167,7 @@ class TestShoeMsg(TestShoeHttp):
         return
 
     def _sendTestMsgs(self):
-        self.shoeMsg = ShoeMsg(self.host, self.path, self.cmnd, self.urn, self.args, 10)
+        self.shoeMsg = ShoeMsg(self.host, self.path, self.cmndName, self.urn, self.args, 10)
         self.shoeMsg.send()
         self.shoeMsg.parse()
         self._checkMsg(self.testCmnd)

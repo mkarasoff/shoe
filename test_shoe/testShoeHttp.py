@@ -10,6 +10,7 @@ import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from test_shoe import *
 import inspect
+import os
 
 class TestShoeHttp(unittest.TestCase):
     testRootDev=TestRootDev()
@@ -53,11 +54,11 @@ class TestShoeHttp(unittest.TestCase):
 
     def setTestCmnd(self, cmnd):
         self.postRtn    = cmnd.rtnMsg
-        self.noReply     = cmnd.noReply
+        self.noReply    = cmnd.noReply
         self.rtnCode    = cmnd.rtnCode
         self.urn        = cmnd.urn
         self.path       = cmnd.path
-        self.cmnd       = cmnd.name
+        self.cmndName   = cmnd.name
         self.args       = cmnd.args
         self.argsCfg    = cmnd.argsCfg
         self.testCmnd   = cmnd
@@ -142,7 +143,9 @@ class TestShoeHttp(unittest.TestCase):
                 rtnMsg=testRootDev.xmlStr
 
             else:
-                raise ValueError(reqPath)
+                fileName=os.path.basename(reqPath)
+                xmlDev=TestShoeXml(fileName)
+                rtnMsg=xmlDev.xmlStr
 
             self.wfile.write(rtnMsg)
             return

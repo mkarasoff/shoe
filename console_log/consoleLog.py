@@ -38,7 +38,9 @@ import logging
 
 class ConsoleLog(logging.getLoggerClass()):
     RT_FORMAT='[%(relativeCreated)d] %(levelname)s: %(message)s'
-    DBUG_FORMAT='[%(asctime)s] %(filename)s:%(lineno)s  %(levelname)s: %(message)s'
+    DBUG_FORMAT='[%(asctime)s] '\
+                '%(filename)s:%(lineno)s:%(funcName)s()  '\
+                '%(levelname)s: %(message)s'
 
     DEBUG   = logging.DEBUG
     INFO    = logging.INFO

@@ -23,25 +23,25 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ############################################################################
-from shoeState import *
 from console_log import *
+from shoeRoot import *
 
 class ShoeOp():
     CURRSTATE_CMND='GetCurrentState'
     FMT_LBL_LEN=16
     FMT_TAB_LEN=4
 
-    def __init__(self, shoeSys, loglvl=0):
+    def __init__(self, shoeRoot, loglvl=0):
         self.log=ConsoleLog(self.__class__.__name__, loglvl)
-        self.shoeSys=shoeSys
+        self.shoeRoot=shoeRoot
         self.loglvl=loglvl
 
-        self.svcNames=shoeSys.svcs.keys()
+        self.svcNames=shoeRoot.svcs.keys()
 
         return
 
     def _getCurrState(self, svcName):
-        currStRtn=self.shoeSys.sendCmnd(self.CURRSTATE_CMND, svcName=svcName)
+        currStRtn=self.shoeRoot.sendCmnd(self.CURRSTATE_CMND, svcName=svcName)
         return currStRtn
 
     def _fmtOp(self, opData, tab=0):
@@ -87,8 +87,8 @@ class TestShoeOp(TestShoeHttp):
         self.port=60006
         self.host='127.0.0.1'
         self.svcName=None
-        self.shoeSys=ShoeSys(self.host)
-        self.op=ShoeOp(self.shoeSys, loglvl=logging.DEBUG)
+        self.shoeRoot=ShoeRoot(self.host)
+        self.op=ShoeOp(self.shoeRoot, loglvl=logging.DEBUG)
         self.cfg=False
         self.httpHandler=TestShoeCurrStHttpHandler
         #This gets config
@@ -98,7 +98,7 @@ class TestShoeOp(TestShoeHttp):
     def _sendTestMsgs(self):
         rtn=self.cfg
         if self.cfg is False:
-            self.shoeSys.getCfg()
+            self.shoeRoot.getCfg()
             self.cfg=True
         return rtn
 

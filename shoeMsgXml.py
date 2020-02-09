@@ -130,6 +130,7 @@ class ShoeMsgXml():
 
     def _genBody(self, treeRoot, cmnd, urn, args={}):
 
+        self.log.debug("cmnd: %s urn: %s args: %s", cmnd, urn, args)
         msgNsArg="{%s}" % urn
         msgNsmap= {ShoeMsgXml.BODY_NS_TAG : urn}
 
