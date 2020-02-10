@@ -96,8 +96,8 @@ class ShoeSvc(ShoeCfgXml):
         except:
             raise
 
-        #self.log.debug("%s SCPD: %s" %
-        #                (self.name, self._scpd))
+        self.log.debug2("%s SCPD: %s" %
+                        (self.name, self._scpd))
 
         try:
             self._stateVarTbl=self._getStateVarTbl(self._scpd)
@@ -107,8 +107,8 @@ class ShoeSvc(ShoeCfgXml):
         except:
             raise
 
-        #self.log.debug("%s State Var Tbl: %s" %
-        #                (self.name, self._stateVarTbl))
+        self.log.debug2("%s State Var Tbl: %s" %
+                        (self.name, self._stateVarTbl))
 
         try:
             self._cmndTbl=self._getCmndTbl(self._scpd)
@@ -118,14 +118,14 @@ class ShoeSvc(ShoeCfgXml):
         except:
             raise
 
-        #self.log.debug("%s Service Commands: %s" %
-        #                (self.name, self._cmndTbl))
+        self.log.debug2("%s Service Commands: %s" %
+                        (self.name, self._cmndTbl))
 
         return
 
     @property
     def cmnds(self):
-        self.log.debug("cmnds: %s", self._cmndTbl)
+        self.log.debug2("cmnds: %s", self._cmndTbl)
 
         if self._cmndTbl is None:
             raise ShoeSvcNoTbl("Service %s not properly initialized" % self.name)
@@ -133,7 +133,6 @@ class ShoeSvc(ShoeCfgXml):
             return list(self._cmndTbl.keys())
 
     def getCmndArgsCfg(self, cmnd):
-
         try:
             argLst=self._cmndTbl[cmnd]
         except (TypeError, KeyError):

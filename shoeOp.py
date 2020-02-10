@@ -35,9 +35,6 @@ class ShoeOp():
         self.log=ConsoleLog(self.__class__.__name__, loglvl)
         self.shoeRoot=shoeRoot
         self.loglvl=loglvl
-
-        self.svcNames=shoeRoot.svcs.keys()
-
         return
 
     def _getCurrState(self, svcName):
@@ -87,78 +84,45 @@ class TestShoeOp(TestShoeHttp):
         self.port=60006
         self.host='127.0.0.1'
         self.svcName=None
-        self.shoeRoot=ShoeRoot(self.host)
+        self.shoeRoot=ShoeRoot(self.host, loglvl=logging.DEBUG)
         self.op=ShoeOp(self.shoeRoot, loglvl=logging.DEBUG)
         self.cfg=False
-        self.httpHandler=TestShoeCurrStHttpHandler
-        #This gets config
+        self.testCbFunc=self._setUp
         self.httpTest()
+        self.testCbFunc=self._sendTestMsgs
+        return
+
+    def _setUp(self):
+        self.shoeRoot.setUp()
         return
 
     def _sendTestMsgs(self):
-        rtn=self.cfg
-        if self.cfg is False:
-            self.shoeRoot.getCfg()
-            self.cfg=True
-        return rtn
-
-class TestShoeOpHttpHandler(TestShoeHttp.TestShoeHttpHandler):
-    def do_POST(self):
-        self.testSvcs= [ TestActSvc(),
-                    TestGroupCtrlSvc(),
-                    TestZoneCtrlSvc()]
-
-        headerIn=dict(self.headers)
-        self.soapAct=headerIn['SOAPACTION']
-
-        self.postRtn=self._getRtn()
-
-        super().do_POST()
         return
-
-    def _getRtn(self):
-        return None
-
-class TestShoeCurrStHttpHandler(TestShoeOpHttpHandler):
-    def _getRtn(self):
-        testSvcRtn=None
-
-        for testSvc in self.testSvcs:
-            if testSvc.getCurrStHdr['SOAPACTION'] == self.soapAct:
-                testSvcRtn=testSvc
-                break
-
-        return testSvcRtn.getCurrStRtnXml
 
 class TestShoeOpGetCurrSt(TestShoeOp):
     def setUp(self):
         super().setUp()
-        #self.testSvcs=[ self.testActSvc,  ]
         self.testSvcs=[ self.testActSvc,
                     self.testGroupCtrlSvc,
                     self.testZoneCtrlSvc]
         return
 
     def _sendTestMsgs(self):
-        if super()._sendTestMsgs():
-            self.currSt=self.op._getCurrState(self.svcName)
+        self.currSt=self.op._getCurrState(self.testSvc.name)
         return
 
     def runTest(self):
         for testSvc in self.testSvcs:
-            self._testGetCurrSt(testSvc)
-            print(self.currSt)
-            self.assertCountEqual(self.currSt, self.currStTestRef)
+            self.testSvc=testSvc
+            cmnd=testSvc.cmnds['GetCurrentState']
+            self.httpTest(cmnd)
 
-            currStFmt=self.op._fmtOp(self.currSt)
+            print("Current state dict******************")
+            print(str(self.currSt))
+
+            currStFmt=self.op._fmtOp(self.currSt.args['CurrentState'])
+            print("Current state format******************")
             print(currStFmt)
-            self.assertEqual(currStFmt, self.currStFmtTestRef)
-        return
 
-    def _testGetCurrSt(self, testSvc):
-        self.currStTestRef =testSvc.currSt
-        self.currStFmtTestRef =testSvc.currStFmt
-        self.postRtn=testSvc.getCurrStRtnXml
-        self.svcName=testSvc.name
-        self.httpTest()
+            self.assertEqual(currStFmt, cmnd.fmtOutput)
         return

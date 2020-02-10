@@ -1304,12 +1304,12 @@ class TestActSvc(TestShoeSvc):
     def getCurrStFmtOutput(self):
 
         currStFmtRtn=\
-            "ActiveInterface  : b'1'\n"\
-            "FriendlyName     : b'Kitchen'\n"\
-            "HEOSNetId        : b'DEFAULT-SSID-8e09dfb09df4FBfa996'\n"\
-            "LastDiscoveredDevice : b''\n"\
-            "P2PMode          : b'NONE'\n"\
-            "Transcode        : b'1'\n"\
+            "ActiveInterface  : 1\n"\
+            "FriendlyName     : Kitchen\n"\
+            "HEOSNetId        : DEFAULT-SSID-8e09dfb09df4FBfa996\n"\
+            "LastDiscoveredDevice : \n"\
+            "P2PMode          : NONE\n"\
+            "Transcode        : 1\n"\
             "AudioConfig      : \n"\
             "    AudioConfig      : \n"\
             "        highpass         : 0\n"\
@@ -1330,9 +1330,9 @@ class TestActSvc(TestShoeSvc):
             "        connectedDevice  : None\n"\
             "        pairedDevices    : None\n"\
             "        hasPairedDevices : 0\n"\
-            "ConfigurationStatus : b'0'\n"\
-            "UpgradeComponentInstallProgress : b'0'\n"\
-            "CurrentLanguageLocale : b'en_US'\n"\
+            "ConfigurationStatus : 0\n"\
+            "UpgradeComponentInstallProgress : 0\n"\
+            "CurrentLanguageLocale : en_US\n"\
             "CurrentWirelessProfile : \n"\
             "    wirelessProfile  : \n"\
             "        wirelessSecurity : \n"\
@@ -1341,8 +1341,8 @@ class TestActSvc(TestShoeSvc):
             "                #text            : WPA2-AES\n"\
             "            @enabled         : true\n"\
             "        @SSID            : DEFAULT-SSID-8e09dfb09df4FBfa996\n"\
-            "DaylightSaving   : b'0'\n"\
-            "IANAName         : b''\n"\
+            "DaylightSaving   : 0\n"\
+            "IANAName         : \n"\
             "LEDConfig        : \n"\
             "    LEDConfig        : \n"\
             "        led              : \n"\
@@ -1398,7 +1398,7 @@ class TestActSvc(TestShoeSvc):
             "        ----------------   \n"\
             "NetworkShareConfig : \n"\
             "    NetworkShareConfig : None\n"\
-            "SessionId        : b''\n"\
+            "SessionId        : \n"\
             "SurroundSpeakerConfig : \n"\
             "    SurroundSpeakerConfig : \n"\
             "        Front            : \n"\
@@ -1440,13 +1440,13 @@ class TestActSvc(TestShoeSvc):
             "                level            : 12\n"\
             "                test_tone        : 0\n"\
             "        DistUnit         : m\n"\
-            "TimeZone         : b'(GMT-8:00)'\n"\
-            "UpdateAction     : b'UPDATE_ACTION_NONE'\n"\
-            "UpdateLevel      : b'0'\n"\
-            "UpgradeProgress  : b'0'\n"\
-            "UpgradeStatus    : b'UPGRADE_CURRENT'\n"\
-            "VolumeLimit      : b'100'\n"\
-            "WifiApSsid       : b''\n"\
-            "WirelessState    : b'LINK_DOWN'\n"\
+            "TimeZone         : (GMT-8:00)\n"\
+            "UpdateAction     : UPDATE_ACTION_NONE\n"\
+            "UpdateLevel      : 0\n"\
+            "UpgradeProgress  : 0\n"\
+            "UpgradeStatus    : UPGRADE_CURRENT\n"\
+            "VolumeLimit      : 100\n"\
+            "WifiApSsid       : \n"\
+            "WirelessState    : LINK_DOWN\n"
 
         return currStFmtRtn

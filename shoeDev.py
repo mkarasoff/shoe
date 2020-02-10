@@ -96,8 +96,8 @@ class ShoeDev(ShoeSvc):
         return svc.sendCmnd(cmnd, args)
 
     def findCmnd(self, cmnd):
-        svcNames=[]
-        for svc in self._svcs:
+        rtnSvcs=[]
+        for svcName, svc in self._svcs.items():
             try:
                 cmnds=svc.cmnds
             except ShoeSvcNoTbl:
@@ -108,9 +108,9 @@ class ShoeDev(ShoeSvc):
                 raise
 
             if cmnd in cmnds:
-                rtnSvc.append(svc.name)
+                rtnSvcs.append(svc.name)
 
-        return svcNames
+        return rtnSvcs
 
     def getSvc(self, svcName):
         self.log.debug("%s Service Name Req: %s" %(self.name, svcName))

@@ -42,6 +42,7 @@ class ConsoleLog(logging.getLoggerClass()):
                 '%(filename)s:%(lineno)s:%(funcName)s()  '\
                 '%(levelname)s: %(message)s'
 
+    DEBUG2  = logging.DEBUG-1
     DEBUG   = logging.DEBUG
     INFO    = logging.INFO
     WARNING = logging.WARNING
@@ -105,6 +106,9 @@ class ConsoleLog(logging.getLoggerClass()):
         ch.setFormatter(self.formatter)
         self.addHandler(ch)
         return ch
+
+    def debug2(self, msg, *args, **kwargs):
+        return self.log(self.DEBUG2, msg, *args, **kwargs)
 
     def setLevel(self, level):
         self.ch.setLevel(level)
