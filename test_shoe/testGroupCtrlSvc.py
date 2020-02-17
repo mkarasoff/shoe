@@ -74,6 +74,7 @@ class TestGroupCtrlSvc(TestShoeSvc):
 
         cmnd.args=OrderedDict([('GroupUUID', self.groupUUID),])
         cmnd.rtn=OrderedDict([('GroupVolume', 90),])
+        cmnd.fmtRtn='GroupVolume      : 90'
 
         self.cmnds[cmnd.name]=cmnd
 ################################################################################
@@ -100,6 +101,7 @@ class TestGroupCtrlSvc(TestShoeSvc):
                         ('GroupMemberChannelList', '')])
 
         cmnd.rtn=OrderedDict([('GroupUUID', self.groupUUID),])
+        cmnd.fmtRtn='GroupUUID        : %s' % self.groupUUID
 
         self.cmnds[cmnd.name]=cmnd
 ################################################################################
@@ -110,6 +112,7 @@ class TestGroupCtrlSvc(TestShoeSvc):
                      'state' : {'dataType': 'string', '@sendEvents': 'yes', 'name': 'LastChange'}},]
 
         cmnd.rtn=OrderedDict([('CurrentState', {}),])
+        cmnd.fmtRtn='CurrentState     : '
         self.cmnds[cmnd.name]=cmnd
 
         return

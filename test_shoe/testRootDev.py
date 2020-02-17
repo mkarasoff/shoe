@@ -67,6 +67,25 @@ class TestRootDev(TestShoeXml):
                     {'major': '1', \
                     'minor': '0'}}}
 
+        self.infoDict=\
+                {'manufacturerURL': 'http://www.denon.com',\
+                'modelName': 'HEOS 1', \
+                'serialNumber': 'ACJG9876543210', \
+                'modelNumber': 'DWS-1000 4.0', \
+                'deviceType': 'urn:schemas-denon-com:device:AiosDevice:1', \
+                'friendlyName': 'Kitchen', \
+                'UDN': 'uuid:ea6e883a-2442-11ea-978f-2e728ce88125',\
+                'manufacturer': 'Denon'},\
+
+        self.infoFmt=\
+            'friendlyName     : Kitchen\n'\
+            'manufacturer     : Denon\n'\
+            'manufacturerURL  : http://www.denon.com\n'\
+            'modelName        : HEOS 1\n'\
+            'modelNumber      : DWS-1000 4.0\n'\
+            'serialNumber     : ACJG9876543210\n'\
+            'UDN              : uuid:ea6e883a-2442-11ea-978f-2e728ce88125\n'\
+
         return
 
     @property
@@ -82,3 +101,216 @@ class TestRootDev(TestShoeXml):
         for dev in self.devs.values():
             cmnds.extend(dev.cmnds)
         return cmnds
+
+    @property
+    def fmtCmndTreeDflt(self):
+        rtnTree=\
+            'ACT-Denon        : \n'\
+            '    ACT              : \n'\
+            '    ----------------   \n'\
+            '                           AddNetworkShare\n'\
+            '                           ApplyChanges\n'\
+            '                           CancelChanges\n'\
+            '                           CancelFirmwareUpgrade\n'\
+            '                           CheckForFirmwareUpgrade\n'\
+            '                           DeleteNetworkShare\n'\
+            '                           GetAccessPointList\n'\
+            '                           GetActiveInterface\n'\
+            '                           GetAudioConfig\n'\
+            '                           GetBluetoothStatus\n'\
+            '                           GetConfigurationStatus\n'\
+            '                           GetConfigurationToken\n'\
+            '                           GetCurrentLanguage\n'\
+            '                           GetCurrentState\n'\
+            '                           GetDaylightSaving\n'\
+            '                           GetFriendlyName\n'\
+            '                           GetHEOSNetID\n'\
+            '                           GetLEDConfig\n'\
+            '                           GetNetworkConfiguration\n'\
+            '                           GetNetworkConfigurationList\n'\
+            '                           GetNetworkShares\n'\
+            '                           GetP2PMode\n'\
+            '                           GetSessionId\n'\
+            '                           GetSupportedLanguageList\n'\
+            '                           GetSurroundSpeakerConfig\n'\
+            '                           GetTimeZone\n'\
+            '                           GetTranscode\n'\
+            '                           GetUpdateAction\n'\
+            '                           GetUpdateLevel\n'\
+            '                           GetUpgradeProgress\n'\
+            '                           GetUpgradeStatus\n'\
+            '                           GetVolumeLimit\n'\
+            '                           GetWirelessProfile\n'\
+            '                           GetWirelessState\n'\
+            '                           GetWirelessStatus\n'\
+            '                           ReIndexNetworkShare\n'\
+            '                           ReMountNetworkShare\n'\
+            '                           RegisterUser\n'\
+            '                           ReleaseConfigurationToken\n'\
+            '                           SetAudioConfig\n'\
+            '                           SetBluetoothAction\n'\
+            '                           SetConfigurationStatus\n'\
+            '                           SetCurrentLanguage\n'\
+            '                           SetDaylightSaving\n'\
+            '                           SetFriendlyName\n'\
+            '                           SetHEOSNetID\n'\
+            '                           SetLEDConfig\n'\
+            '                           SetNetworkConfiguration\n'\
+            '                           SetSessionId\n'\
+            '                           SetSurroundSpeakerConfig\n'\
+            '                           SetTimeZone\n'\
+            '                           SetTranscode\n'\
+            '                           SetUpdateAction\n'\
+            '                           SetUpdateLevel\n'\
+            '                           SetVolumeLimit\n'\
+            '                           SetWPSPinSSID\n'\
+            '                           SetWirelessProfile\n'\
+            '                           StartInvitation\n'\
+            '                           StartWifiAp\n'\
+            '                           StopInvitation\n'\
+            '                           StopWifiAp\n'\
+            '                           SubmitDiagnostics\n'\
+            '                           UpdateFirmware\n'\
+            '    ----------------   \n'\
+            'AiosServices     : \n'\
+            '    ErrorHandler     : \n'\
+            '    ----------------   \n'\
+            '                           ClearError\n'\
+            '                           DummyAction_ErrorHandler\n'\
+            '    ----------------   \n'\
+            '    ZoneControl      : \n'\
+            '    ----------------   \n'\
+            '                           AddMemberToZone\n'\
+            '                           CreateZone\n'\
+            '                           DestroyZone\n'\
+            '                           DummyAction_ZoneControl\n'\
+            '                           GetCurrentState\n'\
+            '                           GetMemberStatus\n'\
+            '                           GetZoneConnectedList\n'\
+            '                           GetZoneFriendlyName\n'\
+            '                           GetZoneMemberList\n'\
+            '                           GetZoneMinimise\n'\
+            '                           GetZoneMute\n'\
+            '                           GetZoneStatus\n'\
+            '                           GetZoneUUID\n'\
+            '                           GetZoneVolume\n'\
+            '                           RemoveMemberFromZone\n'\
+            '                           SetZoneFriendlyName\n'\
+            '                           SetZoneMinimise\n'\
+            '                           SetZoneMute\n'\
+            '                           SetZoneVolume\n'\
+            '                           TestZoneConnectivity\n'\
+            '    ----------------   \n'\
+            '    GroupControl     : \n'\
+            '    ----------------   \n'\
+            '                           AddMembersToGroup\n'\
+            '                           CreateGroup\n'\
+            '                           DestroyGroup\n'\
+            '                           DummyAction_GroupControl\n'\
+            '                           GetConfigDeviceUUID\n'\
+            '                           GetCurrentState\n'\
+            '                           GetDeviceFriendlyName\n'\
+            '                           GetGroupBalance\n'\
+            '                           GetGroupBass\n'\
+            '                           GetGroupFriendlyName\n'\
+            '                           GetGroupMemberChannel\n'\
+            '                           GetGroupMemberList\n'\
+            '                           GetGroupMute\n'\
+            '                           GetGroupStatus\n'\
+            '                           GetGroupTreble\n'\
+            '                           GetGroupUUID\n'\
+            '                           GetGroupUpdating\n'\
+            '                           GetGroupVolume\n'\
+            '                           GetMediaServerUUID\n'\
+            '                           GetSignalStrength\n'\
+            '                           RemoveMembersFromGroup\n'\
+            '                           SetDeviceFriendlyName\n'\
+            '                           SetGroupBalance\n'\
+            '                           SetGroupBass\n'\
+            '                           SetGroupFriendlyName\n'\
+            '                           SetGroupMemberChannel\n'\
+            '                           SetGroupMute\n'\
+            '                           SetGroupTreble\n'\
+            '                           SetGroupVolume\n'\
+            '    ----------------   \n'
+        return rtnTree
+
+    @property
+    def fmtCmndTreeAll(self):
+        rtnTree= self.fmtCmndTreeDflt+\
+            'MediaRenderer    : \n'\
+            '    AVTransport      : \n'\
+            '    ----------------   \n'\
+            '                           GetCurrentState\n'\
+            '                           GetCurrentTransportActions\n'\
+            '                           GetDeviceCapabilities\n'\
+            '                           GetMediaInfo\n'\
+            '                           GetMediaInfo_Ext\n'\
+            '                           GetPositionInfo\n'\
+            '                           GetTransportInfo\n'\
+            '                           GetTransportSettings\n'\
+            '                           Next\n'\
+            '                           Pause\n'\
+            '                           Play\n'\
+            '                           Previous\n'\
+            '                           Seek\n'\
+            '                           SetAVTransportURI\n'\
+            '                           SetNextAVTransportURI\n'\
+            '                           SetPlayMode\n'\
+            '                           Stop\n'\
+            '                           X_SetShuffle\n'\
+            '    ----------------   \n'\
+            '    ConnectionManager : \n'\
+            '    ----------------   \n'\
+            '                           ConnectionComplete\n'\
+            '                           GetCurrentConnectionIDs\n'\
+            '                           GetCurrentConnectionInfo\n'\
+            '                           GetCurrentState\n'\
+            '                           GetProtocolInfo\n'\
+            '                           PrepareForConnection\n'\
+            '    ----------------   \n'\
+            '    RenderingControl : \n'\
+            '    ----------------   \n'\
+            '                           GetCurrentState\n'\
+            '                           GetMute\n'\
+            '                           GetVolume\n'\
+            '                           GetVolumeDB\n'\
+            '                           ListPresets\n'\
+            '                           SelectPreset\n'\
+            '                           SetMute\n'\
+            '                           SetVolume\n'\
+            '                           SetVolumeDB\n'\
+            '                           X_GetBalance\n'\
+            '                           X_GetBass\n'\
+            '                           X_GetPreset\n'\
+            '                           X_GetSubwoofer\n'\
+            '                           X_GetTreble\n'\
+            '                           X_SetBalance\n'\
+            '                           X_SetBass\n'\
+            '                           X_SetMute\n'\
+            '                           X_SetSubwoofer\n'\
+            '                           X_SetTreble\n'\
+            '                           X_SetVolume\n'\
+            '    ----------------   \n'\
+            'MediaServer      : \n'\
+            '    ContentDirectory : \n'\
+            '    ----------------   \n'\
+            '                           Browse\n'\
+            '                           GetSearchCapabilities\n'\
+            '                           GetSortCapabilities\n'\
+            '                           GetSystemUpdateID\n'\
+            '                           Search\n'\
+            '                           X_HideItem\n'\
+            '                           X_RenameItem\n'\
+            '                           X_SetItemInputLevel\n'\
+            '    ----------------   \n'\
+            '    ConnectionManager : \n'\
+            '    ----------------   \n'\
+            '                           ConnectionComplete\n'\
+            '                           GetCurrentConnectionIDs\n'\
+            '                           GetCurrentConnectionInfo\n'\
+            '                           GetCurrentState\n'\
+            '                           GetProtocolInfo\n'\
+            '                           PrepareForConnection\n'\
+            '    ----------------   \n'
+        return rtnTree

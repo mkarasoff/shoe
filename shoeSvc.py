@@ -35,6 +35,7 @@ class ShoeSvc(ShoeCfgXml):
     STATEVARTBL_KEYS=('scpd','serviceStateTable','stateVariable')
     ARGLIST_KEYS=('argumentList','argument')
     NAME_KEY='name'
+    STATE_KEY='state'
     STATEVAR_KEY='relatedStateVariable'
     SCPD_URL_KEY='SCPDURL'
     SVCNAME_KEY='serviceId'
@@ -76,7 +77,7 @@ class ShoeSvc(ShoeCfgXml):
         if self._devInst is not None:
             self.devName=self._devInst.name
 
-        print(self.cfg)
+        self.log.debug("Service Cfg: %s" % self.cfg)
 
         self.path=self.cfg[self.PATH_KEY]
 
@@ -132,7 +133,7 @@ class ShoeSvc(ShoeCfgXml):
         else:
             return list(self._cmndTbl.keys())
 
-    def getCmndArgsCfg(self, cmnd):
+    def getCmndArgs(self, cmnd):
         try:
             argLst=self._cmndTbl[cmnd]
         except (TypeError, KeyError):
@@ -160,13 +161,16 @@ class ShoeSvc(ShoeCfgXml):
             except:
                 raise
 
-            cmndStateVar['state']=stateVar
+            self.log.debug("Service %s Cmnd %s, Arg %s, StateVar %s" %
+                    (self.name, cmnd, arg, stateVar))
+
+            cmndStateVar[self.STATE_KEY]=stateVar
             cmndArgCfg.append(cmndStateVar)
 
         return cmndArgCfg
 
     def sendCmnd(self, cmnd, args={}):
-        argsCfg=self.getCmndArgsCfg(cmnd)
+        argsCfg=self.getCmndArgs(cmnd)
 
         self.log.debug("Cmnd %s Args %s ArgsCfg %s", cmnd, args, argsCfg)
 
@@ -396,10 +400,12 @@ class TestShoeCtrlSvcArgs(TestShoeCtrlSvc):
         self.shoeSvc=ShoeSvc(host=self.HOST,
                             cfg=testSvc.cfg,
                             devInst=self.devInst)
+        self.maxDiff=None
 
         self.httpTest()
 
         for cmndName in cmndNames:
-            cmndArgsCfg=self.shoeSvc.getCmndArgsCfg(cmndName)
+            cmndArgsCfg=self.shoeSvc.getCmndArgs(cmndName)
+
             self.assertCountEqual(testSvc.cmnds[cmndName].argsCfg,
                                     cmndArgsCfg)

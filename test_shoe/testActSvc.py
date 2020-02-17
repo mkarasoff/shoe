@@ -49,9 +49,18 @@ class TestActSvc(TestShoeSvc):
                        'state' : {'dataType': 'string', '@sendEvents': 'yes', 'name': 'LastChange'}},]
 
         cmnd.rtnMsgBody=self.getCurrStRtnMsgBody
-        cmnd.fmtOutput=self.getCurrStFmtOutput
 
+        cmnd.fmtRtn=self.getCurrStFmtOutput
         cmnd.rtn=self.getCurrStRtn
+
+        cmnd.fmtParams=\
+            '----------------   \n'\
+            '    name             : CurrentState\n'\
+            '    direction        : out\n'\
+            '    state            : \n'\
+            '        dataType         : string\n'\
+            '        @sendEvents      : yes\n'\
+            '----------------   \n'\
 
         self.cmnds[cmnd.name]=cmnd
 
@@ -66,6 +75,22 @@ class TestActSvc(TestShoeSvc):
 
         cmnd.args=OrderedDict([('configurationToken', '1234567890'),])
         cmnd.rtn = OrderedDict([('accessPointList', 'wapname'),])
+        cmnd.fmtRtn='accessPointList  : wapname'
+
+        cmnd.fmtParams=\
+            '----------------   \n'\
+            '    name             : configurationToken\n'\
+            '    direction        : in\n'\
+            '    state            : \n'\
+            '        dataType         : string\n'\
+            '        @sendEvents      : no\n'\
+            '----------------   \n'\
+            '    name             : accessPointList\n'\
+            '    direction        : out\n'\
+            '    state            : \n'\
+            '        dataType         : string\n'\
+            '        @sendEvents      : no\n'\
+            '----------------   \n'\
 
         self.cmnds[cmnd.name]=cmnd
 
@@ -77,6 +102,16 @@ class TestActSvc(TestShoeSvc):
                         'state' : {'dataType': 'string', '@sendEvents': 'no', 'name': 'ARG_ConfigurationToken'}},]
 
         cmnd.rtn=OrderedDict([('configurationToken', 'caf7916a94db1'),])
+        cmnd.fmtRtn='configurationToken : caf7916a94db1'
+
+        cmnd.fmtParams=\
+            '----------------   \n'\
+            '    name             : configurationToken\n'\
+            '    direction        : out\n'\
+            '    state            : \n'\
+            '        dataType         : string\n'\
+            '        @sendEvents      : no\n'\
+            '----------------   \n'\
 
         self.cmnds[cmnd.name]=cmnd
 
@@ -97,6 +132,24 @@ class TestActSvc(TestShoeSvc):
 
         cmnd.args=OrderedDict([('UpdateAction', 'UPDATE_ACTION_NONE'),])
 
+        cmnd.fmtParams=\
+            '----------------   \n'\
+            '    name             : UpdateAction\n'\
+            '    direction        : in\n'\
+            '    state            : \n'\
+            '        dataType         : string\n'\
+            '        defaultValue     : UPDATE_ACTION_NONE\n'\
+            '        allowedValueList : \n'\
+            '            allowedValue     : \n'\
+            '            ----------------   \n'\
+            '                                   UPDATE_ACTION_NONE\n'\
+            '                                   UPDATE_ACTION_TONIGHT\n'\
+            '                                   UPDATE_ACTION_REMIND\n'\
+            '                                   UPDATE_ACTION_SKIP\n'\
+            '            ----------------   \n'\
+            '        @sendEvents      : no\n'\
+            '----------------   \n'\
+
         self.cmnds[cmnd.name]=cmnd
 
 ################################################################################
@@ -112,12 +165,72 @@ class TestActSvc(TestShoeSvc):
 
         cmnd.args=OrderedDict([('networkConfigurationId', '1'),])
         cmnd.rtn=OrderedDict([('networkConfiguration', '1'),])
+        cmnd.fmtRtn = "networkConfiguration : 1"
+
+        cmnd.fmtParams=\
+            '----------------   \n'\
+            '    name             : networkConfigurationId\n'\
+            '    direction        : in\n'\
+            '    state            : \n'\
+            '        dataType         : ui1\n'\
+            '        defaultValue     : 1\n'\
+            '        allowedValueRange : \n'\
+            '            minimum          : 1\n'\
+            '            maximum          : 255\n'\
+            '            step             : 1\n'\
+            '        @sendEvents      : no\n'\
+            '----------------   \n'\
+            '    name             : networkConfiguration\n'\
+            '    direction        : out\n'\
+            '    state            : \n'\
+            '        dataType         : string\n'\
+            '        @sendEvents      : no\n'\
+            '----------------   \n'\
+
+        self.cmnds[cmnd.name]=cmnd
+
+################################################################################
+        cmnd = TestShoeCmnd('SetTimeZone', self.urn, self.cmndPath, self)
+
+        cmnd.argsCfg=[\
+             {'relatedStateVariable': 'TimeZone', 'direction': 'in', 'name': 'timeZone',\
+                'state' : self.timeZoneStateDict},\
+                {'relatedStateVariable': 'IANAName', 'direction': 'in', 'name': 'ianaName',\
+                'state' : {'dataType': 'string',\
+                  '@sendEvents': 'no',\
+                  'name': 'IANAName'}}]
+
+        cmnd.args=OrderedDict([('timeZone', '(GMT-1)'),\
+                            ('ianaName', 'Ex-Parrot'),])
+
+        cmnd.fmtParams=self.setTimeZoneParamFmt
+
+        self.cmnds[cmnd.name]=cmnd
+
+################################################################################
+        cmnd = TestShoeCmnd('GetTimeZone', self.urn, self.cmndPath, self)
+
+        cmnd.argsCfg=[\
+             {'relatedStateVariable': 'TimeZone', 'direction': 'out', 'name': 'timeZone',\
+                'state' : self.timeZoneStateDict},\
+                {'relatedStateVariable': 'IANAName', 'direction': 'out', 'name': 'ianaName',\
+                'state' : {'dataType': 'string',\
+                  '@sendEvents': 'no',\
+                  'name': 'IANAName'}}]
+
+        cmnd.rtn=OrderedDict([('timeZone', '(GMT-1)'),\
+                            ('ianaName', 'Ex-Parrot'),])
+
+        cmnd.fmtRtn='timeZone         : (GMT-1)\n'\
+                    'ianaName         : Ex-Parrot'
+
+        cmnd.fmtParams=self.getTimeZoneParamFmt
+
         self.cmnds[cmnd.name]=cmnd
 
 ################################################################################
     @property
     def cmndTbl(self):
-
         cmndTbl={\
             'SetConfigurationStatus': [\
                 {'relatedStateVariable': 'ConfigurationStatus', 'direction': 'in', 'name': 'configurationStatus'}],\
@@ -899,52 +1012,7 @@ class TestActSvc(TestShoeSvc):
              {'dataType': 'string',\
                   '@sendEvents': 'no',\
                   'name': 'SurroundSpeakerConfig'},\
-             {'dataType': 'string',\
-                  'defaultValue': '(GMT-12:00)',\
-                  'name': 'TimeZone',\
-                  '@sendEvents': 'no',\
-                  'allowedValueList': {'allowedValue': [\
-                       '(GMT-12:00)',\
-                       '(GMT-11:00)',\
-                       '(GMT-10:00)',\
-                       '(GMT-9:30)',\
-                       '(GMT-9:00)',\
-                       '(GMT-8:00)',\
-                       '(GMT-7:00)',\
-                       '(GMT-6:00)',\
-                       '(GMT-5:00)',\
-                       '(GMT-4:30)',\
-                       '(GMT-4:00)',\
-                       '(GMT-3:30)',\
-                       '(GMT-3:00)',\
-                       '(GMT-2:00)',\
-                       '(GMT-1:00)',\
-                       '(GMT)',\
-                       '(GMT+1:00)',\
-                       '(GMT+2:00)',\
-                       '(GMT+3:00)',\
-                       '(GMT+3:30)',\
-                       '(GMT+4:00)',\
-                       '(GMT+4:30)',\
-                       '(GMT+5:00)',\
-                       '(GMT+5:30)',\
-                       '(GMT+5:45)',\
-                       '(GMT+6:00)',\
-                       '(GMT+6:30)',\
-                       '(GMT+7:00)',\
-                       '(GMT+8:00)',\
-                       '(GMT+8:30)',\
-                       '(GMT+8:45)',\
-                       '(GMT+9:00)',\
-                       '(GMT+9:30)',\
-                       '(GMT+10:00)',\
-                       '(GMT+10:30)',\
-                       '(GMT+11:00)',\
-                       '(GMT+11:30)',\
-                       '(GMT+12:00)',\
-                       '(GMT+12:45)',\
-                       '(GMT+13:00)',\
-                       '(GMT+14:00)']}},\
+             self.timeZoneStateDict,\
              {'dataType': 'string',\
                   'defaultValue': 'UPDATE_ACTION_NONE',\
                   'name': 'UpdateAction',\
@@ -1302,151 +1370,330 @@ class TestActSvc(TestShoeSvc):
 
     @property
     def getCurrStFmtOutput(self):
-
         currStFmtRtn=\
-            "ActiveInterface  : 1\n"\
-            "FriendlyName     : Kitchen\n"\
-            "HEOSNetId        : DEFAULT-SSID-8e09dfb09df4FBfa996\n"\
-            "LastDiscoveredDevice : \n"\
-            "P2PMode          : NONE\n"\
-            "Transcode        : 1\n"\
-            "AudioConfig      : \n"\
-            "    AudioConfig      : \n"\
-            "        highpass         : 0\n"\
-            "        lowpass          : 80\n"\
-            "        subwooferEnable  : 0\n"\
-            "        outputMode       : STEREO\n"\
-            "        ampBridged       : 0\n"\
-            "        soundMode        : STEREO\n"\
-            "        impedance        : None\n"\
-            "        ampPower         : 1\n"\
-            "        availableSoundModes : MOVIE_NORMAL,MUSIC_NORMAL\n"\
-            "        sourceDirect     : 0\n"\
-            "        bassBoost        : 0\n"\
-            "        speakerOption    : None\n"\
-            "BTConfig         : \n"\
-            "    BluetoothStatus  : \n"\
-            "        connectedStatus  : DISCONNECTED\n"\
-            "        connectedDevice  : None\n"\
-            "        pairedDevices    : None\n"\
-            "        hasPairedDevices : 0\n"\
-            "ConfigurationStatus : 0\n"\
-            "UpgradeComponentInstallProgress : 0\n"\
-            "CurrentLanguageLocale : en_US\n"\
-            "CurrentWirelessProfile : \n"\
-            "    wirelessProfile  : \n"\
-            "        wirelessSecurity : \n"\
-            "            Mode             : \n"\
-            "                @passPhrase      : DEFAULT-PWD-c4E10186eDA2cbfAEB73454E52C09eDFCBEAC50a2fde2460Dd41\n"\
-            "                #text            : WPA2-AES\n"\
-            "            @enabled         : true\n"\
-            "        @SSID            : DEFAULT-SSID-8e09dfb09df4FBfa996\n"\
-            "DaylightSaving   : 0\n"\
-            "IANAName         : \n"\
-            "LEDConfig        : \n"\
-            "    LEDConfig        : \n"\
-            "        led              : \n"\
-            "        ----------------   \n"\
-            "            name             : MODE\n"\
-            "            brightness       : 100\n"\
-            "        ----------------   \n"\
-            "            name             : NETWORK\n"\
-            "            brightness       : 100\n"\
-            "        ----------------   \n"\
-            "            name             : MUTED\n"\
-            "            brightness       : 100\n"\
-            "        ----------------   \n"\
-            "            name             : REAR_STATUS\n"\
-            "            brightness       : 100\n"\
-            "        ----------------   \n"\
-            "NetworkConfigurationList : \n"\
-            "    listNetworkConfigurations : \n"\
-            "        networkConfiguration : \n"\
-            "        ----------------   \n"\
-            "            Name             : eth0\n"\
-            "            Type             : LAN\n"\
-            "            IP               : 10.42.12.12\n"\
-            "            Netmask          : 255.255.255.0\n"\
-            "            Gateway          : 10.42.12.1\n"\
-            "            DNS1             : 10.42.12.1\n"\
-            "            DNS2             : 0.0.0.0\n"\
-            "            DNS3             : 0.0.0.0\n"\
-            "            gwMac            : 000000000000\n"\
-            "            @id              : 1\n"\
-            "            @dhcpOn          : 0\n"\
-            "            @enabled         : true\n"\
-            "        ----------------   \n"\
-            "            Name             : wlan0\n"\
-            "            Type             : WLAN\n"\
-            "            IP               : 0.0.0.0\n"\
-            "            Netmask          : 0.0.0.0\n"\
-            "            Gateway          : 0.0.0.0\n"\
-            "            DNS1             : 0.0.0.0\n"\
-            "            DNS2             : 0.0.0.0\n"\
-            "            DNS3             : 0.0.0.0\n"\
-            "            gwMac            : None\n"\
-            "            wirelessProfile  : \n"\
-            "                wirelessSecurity : \n"\
-            "                    Mode             : \n"\
-            "                        @passPhrase      : DEFAULT-PWD-c4E10186eDA2cbfAEB73454E52C09eDFCBEAC50a2fde2460Dd41\n"\
-            "                        #text            : WPA2-AES\n"\
-            "                    @enabled         : true\n"\
-            "                @SSID            : DEFAULT-SSID-8e09dfb09df4FBfa996\n"\
-            "            @id              : 2\n"\
-            "            @dhcpOn          : 1\n"\
-            "            @enabled         : true\n"\
-            "        ----------------   \n"\
-            "NetworkShareConfig : \n"\
-            "    NetworkShareConfig : None\n"\
-            "SessionId        : \n"\
-            "SurroundSpeakerConfig : \n"\
-            "    SurroundSpeakerConfig : \n"\
-            "        Front            : \n"\
-            "            enabled          : 1\n"\
-            "            crossover        : 0\n"\
-            "            Right            : \n"\
-            "                distance         : 12\n"\
-            "                level            : 12\n"\
-            "                test_tone        : 0\n"\
-            "            Left             : \n"\
-            "                distance         : 12\n"\
-            "                level            : 12\n"\
-            "                test_tone        : 0\n"\
-            "        Center           : \n"\
-            "            enabled          : 0\n"\
-            "            crossover        : 0\n"\
-            "            Center           : \n"\
-            "                distance         : 12\n"\
-            "                level            : 12\n"\
-            "                test_tone        : 0\n"\
-            "        Subwoofer        : \n"\
-            "            enabled          : 0\n"\
-            "            lowpass          : 250\n"\
-            "            phase            : 0\n"\
-            "            Subwoofer        : \n"\
-            "                distance         : 12\n"\
-            "                level            : 12\n"\
-            "                test_tone        : 0\n"\
-            "        Rear             : \n"\
-            "            enabled          : 0\n"\
-            "            crossover        : 0\n"\
-            "            surround_mode    : OFF\n"\
-            "            Right            : \n"\
-            "                distance         : 10\n"\
-            "                level            : 12\n"\
-            "                test_tone        : 0\n"\
-            "            Left             : \n"\
-            "                distance         : 10\n"\
-            "                level            : 12\n"\
-            "                test_tone        : 0\n"\
-            "        DistUnit         : m\n"\
-            "TimeZone         : (GMT-8:00)\n"\
-            "UpdateAction     : UPDATE_ACTION_NONE\n"\
-            "UpdateLevel      : 0\n"\
-            "UpgradeProgress  : 0\n"\
-            "UpgradeStatus    : UPGRADE_CURRENT\n"\
-            "VolumeLimit      : 100\n"\
-            "WifiApSsid       : \n"\
-            "WirelessState    : LINK_DOWN\n"
+            'CurrentState     : \n'\
+            '    ActiveInterface  : 1\n'\
+            '    FriendlyName     : Kitchen\n'\
+            '    HEOSNetId        : DEFAULT-SSID-8e09dfb09df4FBfa996\n'\
+            '    LastDiscoveredDevice : \n'\
+            '    P2PMode          : NONE\n'\
+            '    Transcode        : 1\n'\
+            '    AudioConfig      : \n'\
+            '        AudioConfig      : \n'\
+            '            highpass         : 0\n'\
+            '            lowpass          : 80\n'\
+            '            subwooferEnable  : 0\n'\
+            '            outputMode       : STEREO\n'\
+            '            ampBridged       : 0\n'\
+            '            soundMode        : STEREO\n'\
+            '            impedance        : None\n'\
+            '            ampPower         : 1\n'\
+            '            availableSoundModes : MOVIE_NORMAL,MUSIC_NORMAL\n'\
+            '            sourceDirect     : 0\n'\
+            '            bassBoost        : 0\n'\
+            '            speakerOption    : None\n'\
+            '    BTConfig         : \n'\
+            '        BluetoothStatus  : \n'\
+            '            connectedStatus  : DISCONNECTED\n'\
+            '            connectedDevice  : None\n'\
+            '            pairedDevices    : None\n'\
+            '            hasPairedDevices : 0\n'\
+            '    ConfigurationStatus : 0\n'\
+            '    UpgradeComponentInstallProgress : 0\n'\
+            '    CurrentLanguageLocale : en_US\n'\
+            '    CurrentWirelessProfile : \n'\
+            '        wirelessProfile  : \n'\
+            '            wirelessSecurity : \n'\
+            '                Mode             : \n'\
+            '                    @passPhrase      : DEFAULT-PWD-c4E10186eDA2cbfAEB73454E52C09eDFCBEAC50a2fde2460Dd41\n'\
+            '                    #text            : WPA2-AES\n'\
+            '                @enabled         : true\n'\
+            '            @SSID            : DEFAULT-SSID-8e09dfb09df4FBfa996\n'\
+            '    DaylightSaving   : 0\n'\
+            '    IANAName         : \n'\
+            '    LEDConfig        : \n'\
+            '        LEDConfig        : \n'\
+            '            led              : \n'\
+            '            ----------------   \n'\
+            '                name             : MODE\n'\
+            '                brightness       : 100\n'\
+            '            ----------------   \n'\
+            '                name             : NETWORK\n'\
+            '                brightness       : 100\n'\
+            '            ----------------   \n'\
+            '                name             : MUTED\n'\
+            '                brightness       : 100\n'\
+            '            ----------------   \n'\
+            '                name             : REAR_STATUS\n'\
+            '                brightness       : 100\n'\
+            '            ----------------   \n'\
+            '    NetworkConfigurationList : \n'\
+            '        listNetworkConfigurations : \n'\
+            '            networkConfiguration : \n'\
+            '            ----------------   \n'\
+            '                Name             : eth0\n'\
+            '                Type             : LAN\n'\
+            '                IP               : 10.42.12.12\n'\
+            '                Netmask          : 255.255.255.0\n'\
+            '                Gateway          : 10.42.12.1\n'\
+            '                DNS1             : 10.42.12.1\n'\
+            '                DNS2             : 0.0.0.0\n'\
+            '                DNS3             : 0.0.0.0\n'\
+            '                gwMac            : 000000000000\n'\
+            '                @id              : 1\n'\
+            '                @dhcpOn          : 0\n'\
+            '                @enabled         : true\n'\
+            '            ----------------   \n'\
+            '                Name             : wlan0\n'\
+            '                Type             : WLAN\n'\
+            '                IP               : 0.0.0.0\n'\
+            '                Netmask          : 0.0.0.0\n'\
+            '                Gateway          : 0.0.0.0\n'\
+            '                DNS1             : 0.0.0.0\n'\
+            '                DNS2             : 0.0.0.0\n'\
+            '                DNS3             : 0.0.0.0\n'\
+            '                gwMac            : None\n'\
+            '                wirelessProfile  : \n'\
+            '                    wirelessSecurity : \n'\
+            '                        Mode             : \n'\
+            '                            @passPhrase      : DEFAULT-PWD-c4E10186eDA2cbfAEB73454E52C09eDFCBEAC50a2fde2460Dd41\n'\
+            '                            #text            : WPA2-AES\n'\
+            '                        @enabled         : true\n'\
+            '                    @SSID            : DEFAULT-SSID-8e09dfb09df4FBfa996\n'\
+            '                @id              : 2\n'\
+            '                @dhcpOn          : 1\n'\
+            '                @enabled         : true\n'\
+            '            ----------------   \n'\
+            '    NetworkShareConfig : \n'\
+            '        NetworkShareConfig : None\n'\
+            '    SessionId        : \n'\
+            '    SurroundSpeakerConfig : \n'\
+            '        SurroundSpeakerConfig : \n'\
+            '            Front            : \n'\
+            '                enabled          : 1\n'\
+            '                crossover        : 0\n'\
+            '                Right            : \n'\
+            '                    distance         : 12\n'\
+            '                    level            : 12\n'\
+            '                    test_tone        : 0\n'\
+            '                Left             : \n'\
+            '                    distance         : 12\n'\
+            '                    level            : 12\n'\
+            '                    test_tone        : 0\n'\
+            '            Center           : \n'\
+            '                enabled          : 0\n'\
+            '                crossover        : 0\n'\
+            '                Center           : \n'\
+            '                    distance         : 12\n'\
+            '                    level            : 12\n'\
+            '                    test_tone        : 0\n'\
+            '            Subwoofer        : \n'\
+            '                enabled          : 0\n'\
+            '                lowpass          : 250\n'\
+            '                phase            : 0\n'\
+            '                Subwoofer        : \n'\
+            '                    distance         : 12\n'\
+            '                    level            : 12\n'\
+            '                    test_tone        : 0\n'\
+            '            Rear             : \n'\
+            '                enabled          : 0\n'\
+            '                crossover        : 0\n'\
+            '                surround_mode    : OFF\n'\
+            '                Right            : \n'\
+            '                    distance         : 10\n'\
+            '                    level            : 12\n'\
+            '                    test_tone        : 0\n'\
+            '                Left             : \n'\
+            '                    distance         : 10\n'\
+            '                    level            : 12\n'\
+            '                    test_tone        : 0\n'\
+            '            DistUnit         : m\n'\
+            '    TimeZone         : (GMT-8:00)\n'\
+            '    UpdateAction     : UPDATE_ACTION_NONE\n'\
+            '    UpdateLevel      : 0\n'\
+            '    UpgradeProgress  : 0\n'\
+            '    UpgradeStatus    : UPGRADE_CURRENT\n'\
+            '    VolumeLimit      : 100\n'\
+            '    WifiApSsid       : \n'\
+            '    WirelessState    : LINK_DOWN'
 
         return currStFmtRtn
+
+    @property
+    def timeZoneStateDict(self):
+        rtn={'dataType': 'string',\
+                  'defaultValue': '(GMT-12:00)',\
+                  'name': 'TimeZone',\
+                  '@sendEvents': 'no',\
+                  'allowedValueList': {'allowedValue': [\
+                       '(GMT-12:00)',\
+                       '(GMT-11:00)',\
+                       '(GMT-10:00)',\
+                       '(GMT-9:30)',\
+                       '(GMT-9:00)',\
+                       '(GMT-8:00)',\
+                       '(GMT-7:00)',\
+                       '(GMT-6:00)',\
+                       '(GMT-5:00)',\
+                       '(GMT-4:30)',\
+                       '(GMT-4:00)',\
+                       '(GMT-3:30)',\
+                       '(GMT-3:00)',\
+                       '(GMT-2:00)',\
+                       '(GMT-1:00)',\
+                       '(GMT)',\
+                       '(GMT+1:00)',\
+                       '(GMT+2:00)',\
+                       '(GMT+3:00)',\
+                       '(GMT+3:30)',\
+                       '(GMT+4:00)',\
+                       '(GMT+4:30)',\
+                       '(GMT+5:00)',\
+                       '(GMT+5:30)',\
+                       '(GMT+5:45)',\
+                       '(GMT+6:00)',\
+                       '(GMT+6:30)',\
+                       '(GMT+7:00)',\
+                       '(GMT+8:00)',\
+                       '(GMT+8:30)',\
+                       '(GMT+8:45)',\
+                       '(GMT+9:00)',\
+                       '(GMT+9:30)',\
+                       '(GMT+10:00)',\
+                       '(GMT+10:30)',\
+                       '(GMT+11:00)',\
+                       '(GMT+11:30)',\
+                       '(GMT+12:00)',\
+                       '(GMT+12:45)',\
+                       '(GMT+13:00)',\
+                       '(GMT+14:00)']}}
+
+        return rtn
+
+    @property
+    def setTimeZoneParamFmt(self):
+        fmtRtn=\
+           '----------------   \n'\
+           '    name             : timeZone\n'\
+           '    direction        : in\n'\
+           '    state            : \n'\
+           '        dataType         : string\n'\
+           '        defaultValue     : (GMT-12:00)\n'\
+           '        allowedValueList : \n'\
+           '            allowedValue     : \n'\
+           '            ----------------   \n'\
+           '                                   (GMT-12:00)\n'\
+           '                                   (GMT-11:00)\n'\
+           '                                   (GMT-10:00)\n'\
+           '                                   (GMT-9:30)\n'\
+           '                                   (GMT-9:00)\n'\
+           '                                   (GMT-8:00)\n'\
+           '                                   (GMT-7:00)\n'\
+           '                                   (GMT-6:00)\n'\
+           '                                   (GMT-5:00)\n'\
+           '                                   (GMT-4:30)\n'\
+           '                                   (GMT-4:00)\n'\
+           '                                   (GMT-3:30)\n'\
+           '                                   (GMT-3:00)\n'\
+           '                                   (GMT-2:00)\n'\
+           '                                   (GMT-1:00)\n'\
+           '                                   (GMT)\n'\
+           '                                   (GMT+1:00)\n'\
+           '                                   (GMT+2:00)\n'\
+           '                                   (GMT+3:00)\n'\
+           '                                   (GMT+3:30)\n'\
+           '                                   (GMT+4:00)\n'\
+           '                                   (GMT+4:30)\n'\
+           '                                   (GMT+5:00)\n'\
+           '                                   (GMT+5:30)\n'\
+           '                                   (GMT+5:45)\n'\
+           '                                   (GMT+6:00)\n'\
+           '                                   (GMT+6:30)\n'\
+           '                                   (GMT+7:00)\n'\
+           '                                   (GMT+8:00)\n'\
+           '                                   (GMT+8:30)\n'\
+           '                                   (GMT+8:45)\n'\
+           '                                   (GMT+9:00)\n'\
+           '                                   (GMT+9:30)\n'\
+           '                                   (GMT+10:00)\n'\
+           '                                   (GMT+10:30)\n'\
+           '                                   (GMT+11:00)\n'\
+           '                                   (GMT+11:30)\n'\
+           '                                   (GMT+12:00)\n'\
+           '                                   (GMT+12:45)\n'\
+           '                                   (GMT+13:00)\n'\
+           '                                   (GMT+14:00)\n'\
+           '            ----------------   \n'\
+           '        @sendEvents      : no\n'\
+           '----------------   \n'\
+           '    name             : ianaName\n'\
+           '    direction        : in\n'\
+           '    state            : \n'\
+           '        dataType         : string\n'\
+           '        @sendEvents      : no\n'\
+           '----------------   \n'
+        return fmtRtn
+
+    @property
+    def getTimeZoneParamFmt(self):
+        fmtRtn=\
+           '----------------   \n'\
+           '    name             : timeZone\n'\
+           '    direction        : out\n'\
+           '    state            : \n'\
+           '        dataType         : string\n'\
+           '        defaultValue     : (GMT-12:00)\n'\
+           '        allowedValueList : \n'\
+           '            allowedValue     : \n'\
+           '            ----------------   \n'\
+           '                                   (GMT-12:00)\n'\
+           '                                   (GMT-11:00)\n'\
+           '                                   (GMT-10:00)\n'\
+           '                                   (GMT-9:30)\n'\
+           '                                   (GMT-9:00)\n'\
+           '                                   (GMT-8:00)\n'\
+           '                                   (GMT-7:00)\n'\
+           '                                   (GMT-6:00)\n'\
+           '                                   (GMT-5:00)\n'\
+           '                                   (GMT-4:30)\n'\
+           '                                   (GMT-4:00)\n'\
+           '                                   (GMT-3:30)\n'\
+           '                                   (GMT-3:00)\n'\
+           '                                   (GMT-2:00)\n'\
+           '                                   (GMT-1:00)\n'\
+           '                                   (GMT)\n'\
+           '                                   (GMT+1:00)\n'\
+           '                                   (GMT+2:00)\n'\
+           '                                   (GMT+3:00)\n'\
+           '                                   (GMT+3:30)\n'\
+           '                                   (GMT+4:00)\n'\
+           '                                   (GMT+4:30)\n'\
+           '                                   (GMT+5:00)\n'\
+           '                                   (GMT+5:30)\n'\
+           '                                   (GMT+5:45)\n'\
+           '                                   (GMT+6:00)\n'\
+           '                                   (GMT+6:30)\n'\
+           '                                   (GMT+7:00)\n'\
+           '                                   (GMT+8:00)\n'\
+           '                                   (GMT+8:30)\n'\
+           '                                   (GMT+8:45)\n'\
+           '                                   (GMT+9:00)\n'\
+           '                                   (GMT+9:30)\n'\
+           '                                   (GMT+10:00)\n'\
+           '                                   (GMT+10:30)\n'\
+           '                                   (GMT+11:00)\n'\
+           '                                   (GMT+11:30)\n'\
+           '                                   (GMT+12:00)\n'\
+           '                                   (GMT+12:45)\n'\
+           '                                   (GMT+13:00)\n'\
+           '                                   (GMT+14:00)\n'\
+           '            ----------------   \n'\
+           '        @sendEvents      : no\n'\
+           '----------------   \n'\
+           '    name             : ianaName\n'\
+           '    direction        : out\n'\
+           '    state            : \n'\
+           '        dataType         : string\n'\
+           '        @sendEvents      : no\n'\
+           '----------------   \n'
+        return fmtRtn

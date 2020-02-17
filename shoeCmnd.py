@@ -54,6 +54,8 @@ class ShoeCmnd(ShoeMsg):
         return
 
     def send(self):
+        self.log.debug("Send Cmnd: %s \nArgs: %s \nArgsCfg: %s" %
+                        (self.cmnd, self.argsIn, self.argsCfg))
         self.args=self._formatCmnd(self.argsIn, self.argsCfg)
         super().send()
         return
@@ -101,6 +103,7 @@ class ShoeCmnd(ShoeMsg):
         fmtArgs=OrderedDict()
         for argName, argVal in args.items():
             try:
+                self.log.debug("Args Cfg: %s", argsCfg)
                 argCfg=argsCfg[argName]
             except KeyError:
                 errMsg="Invalid Arg %s" % argName

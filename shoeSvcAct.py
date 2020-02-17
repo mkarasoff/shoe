@@ -91,7 +91,7 @@ class TestShoeSvcAct(unittest.TestCase):
                         testAiosObj.act['info'],
                         "Info incorrect")
 
-        getCfgTokenArgs=self.shoeSvcAct.getCmndArgsCfg(testActObj.getCfgTokenCmd)
+        getCfgTokenArgs=self.shoeSvcAct.getCmndArgs(testActObj.getCfgTokenCmd)
         print("@@@@@@@@@@@@@@@@@@Get Cfg Token Args@@@@@@@@@@@@@@@@@@@")
         print(getCfgTokenArgs)
         print(testActObj.getCfgTokenArgs)
@@ -99,7 +99,7 @@ class TestShoeSvcAct(unittest.TestCase):
                         testActObj.getCfgTokenArgs,
                         "Cfg Args")
 
-        getAccPtListArgs=self.shoeSvcAct.getCmndArgsCfg(testActObj.getAccPtListCmnd)
+        getAccPtListArgs=self.shoeSvcAct.getCmndArgs(testActObj.getAccPtListCmnd)
         print("@@@@@@@@@@@@@@@@@@Get Access Pt List Args@@@@@@@@@@@@@@@@@@@")
         print(getAccPtListArgs)
         print(testActObj.getAccPtListArgs)

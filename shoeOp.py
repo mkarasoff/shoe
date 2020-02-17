@@ -25,6 +25,8 @@
 ############################################################################
 from console_log import *
 from shoeRoot import *
+from collections.abc import Iterable
+from collections import OrderedDict
 
 class ShoeOp():
     CURRSTATE_CMND='GetCurrentState'
@@ -37,9 +39,21 @@ class ShoeOp():
         self.loglvl=loglvl
         return
 
-    def _getCurrState(self, svcName):
-        currStRtn=self.shoeRoot.sendCmnd(self.CURRSTATE_CMND, svcName=svcName)
-        return currStRtn
+    def getInfo(self):
+        infoFmt=self._fmtOp(self.shoeRoot.info)
+        return infoFmt
+
+    def runCmnd(self, cmnd, args, svcName=None, devName=None):
+        cmndRtn=self.shoeRoot.sendCmnd(cmnd, args, svcName, devName)
+        self.log.debug("Command Return:\n%s" % str(cmndRtn))
+        cmndRtnStr = "%s\n" % cmndRtn.cmnd
+        cmndRtnStr += self._fmtOp(cmndRtn.args)
+        self.log.debug("Cmnd Return String:\n%s" % cmndRtnStr)
+        return cmndRtnStr
+
+    def getCurrState(self, svcName):
+        currStFmt=self.runCmnd(self.CURRSTATE_CMND, svcName=svcName)
+        return currStFmt
 
     def _fmtOp(self, opData, tab=0):
         fmt= '{0:>%s}{1:%s} : {2:<0}\n'%(tab, self.FMT_LBL_LEN)
@@ -47,26 +61,40 @@ class ShoeOp():
         fmtStr=''
 
         try:
+            self.log.debug2("OpData %s", opData)
 
             for lbl,val in opData.items():
+                self.log.debug2("OpData Value [lbl]: %s [val]: %s [type]: %s",
+                        lbl, val, type(val))
                 valType=type(val)
-                if valType is dict:
+                if valType is dict or valType is OrderedDict:
                     fmtStr=fmtStr+fmt.format('', str(lbl), '')
                     fmtStr=fmtStr+self._fmtOp(val, tab+self.FMT_TAB_LEN)
                 elif valType is list:
-                    fmtStr=fmt.format('', lbl, '')
+                    fmtStr=fmtStr+fmt.format('', lbl, '')
                     lstBreak='-'*self.FMT_LBL_LEN
                     fmtStr=fmtStr+lblessFmt.format('', lstBreak, '')
+                    first=True
                     for valEl in val:
-                        fmtStr=fmtStr+self._fmtOp(valEl, tab+self.FMT_TAB_LEN)
-                        fmtStr=fmtStr+lblessFmt.format('', lstBreak, '')
+                        if first:
+                            first=False
+                        else:
+                            if isinstance(valEl, Iterable) and type(valEl) != str:
+                                fmtStr=fmtStr+lblessFmt.format('', lstBreak, '')
+
+                        self.log.debug2("List Element %s", valEl)
+                        listElStr=self._fmtOp(valEl, tab+self.FMT_TAB_LEN)
+                        self.log.debug2("List Element String %s", listElStr)
+                        fmtStr=fmtStr+listElStr
+                    fmtStr=fmtStr+lblessFmt.format('', lstBreak, '')
                 elif valType is bytes:
                     fmtStr=fmtStr+fmt.format('', str(lbl), str(val.decode()))
                 else:
                     fmtStr=fmtStr+fmt.format('', str(lbl), str(val))
 
         except AttributeError:
-            fmtSt=fmtStr+lblessFmt.format('', '', str(opData))
+            self.log.debug2("OpData Not Iterable %s", opData)
+            fmtStr=fmtStr+lblessFmt.format('', '', str(opData))
             pass
 
         except:
@@ -99,7 +127,19 @@ class TestShoeOp(TestShoeHttp):
     def _sendTestMsgs(self):
         return
 
-class TestShoeOpGetCurrSt(TestShoeOp):
+class TestShoeOpGetInfo(TestShoeOp):
+    def setUp(self):
+        super().setUp()
+        return
+
+    def runTest(self):
+        rootDev=TestRootDev()
+        self.infoFmt=self.op.getInfo()
+        print(self.infoFmt)
+        self.assertEqual(self.infoFmt, rootDev.infoFmt)
+        return
+
+class TestShoeOpRunCmnd(TestShoeOp):
     def setUp(self):
         super().setUp()
         self.testSvcs=[ self.testActSvc,
@@ -108,21 +148,22 @@ class TestShoeOpGetCurrSt(TestShoeOp):
         return
 
     def _sendTestMsgs(self):
-        self.currSt=self.op._getCurrState(self.testSvc.name)
+        cmnd=self.cmnd
+        self.fmtCmndRtn=self.op.runCmnd(cmnd.name, cmnd.args, cmnd.svcName, cmnd.devName)
         return
 
     def runTest(self):
+        self.maxDiff=None
         for testSvc in self.testSvcs:
-            self.testSvc=testSvc
-            cmnd=testSvc.cmnds['GetCurrentState']
-            self.httpTest(cmnd)
+            for cmndName, cmnd in testSvc.cmnds.items():
+                self.cmnd = cmnd
+                self.httpTest(cmnd)
 
-            print("Current state dict******************")
-            print(str(self.currSt))
+                print("Expected*********************")
+                print(cmnd.fmtCmndRtn)
 
-            currStFmt=self.op._fmtOp(self.currSt.args['CurrentState'])
-            print("Current state format******************")
-            print(currStFmt)
+                print("Current state format******************")
+                print(self.fmtCmndRtn)
 
-            self.assertEqual(currStFmt, cmnd.fmtOutput)
+                self.assertEqual(self.fmtCmndRtn, cmnd.fmtCmndRtn)
         return

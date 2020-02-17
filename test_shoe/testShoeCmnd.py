@@ -52,7 +52,35 @@ class TestShoeCmnd():
         self.rtnMsgOvr=None
         self.msgOvr=None
         self.hdrOvr=None
+        self.fmtParams=''
+        self.fmtRtn=None
         return
+
+    @property
+    def fmtCmndRtn(self):
+        if self.fmtRtn is None:
+            rtn=\
+                '%sResponse\n' %\
+                self.name
+
+        else:
+            rtn=\
+                '%sResponse\n'\
+                '%s\n' %\
+                (self.name, self.fmtRtn)
+        return rtn
+
+    @property
+    def fmtCmndInfo(self):
+        rtn=\
+            'Cmnd:    %s \n'\
+            'Device:  %s \n'\
+            'Service: %s\n'\
+            'Parameters       : \n'\
+            '%s\n' % \
+            (self.name, self.devName, self.svcName, self.fmtParams)
+
+        return rtn
 
     @property
     def hdr(self):
