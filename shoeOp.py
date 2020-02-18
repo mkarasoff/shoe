@@ -55,6 +55,61 @@ class ShoeOp():
         currStFmt=self.runCmnd(self.CURRSTATE_CMND, svcName=svcName)
         return currStFmt
 
+    def showCmndTree(self, devName=None, showAll=False):
+        cmndTree=self.shoeRoot.getCmndTree()
+
+        showDevs=None
+        showTree={}
+
+        if devName is not None:
+            showDevs=[devName,]
+        elif not showAll:
+            showDevs=ShoeRoot.PREFERRED_DEVS
+
+        if showDevs is None:
+            showTree=cmndTree
+        else:
+            self.log.debug(showDevs)
+            showTree=OrderedDict([(devName, cmndTree[devName]) for devName in showDevs])
+
+        self.log.debug("ShowTree %s", showTree)
+
+        fmtTree = self._fmtOp(showTree)
+        self.log.debug("Fmt Tree:\n %s", fmtTree)
+        return fmtTree
+
+    def showCmndInfo(self, cmnd, svcName=None, devName=None):
+        cmndLocs=self.shoeRoot.findCmnd(cmnd, svcName, devName)
+
+        cmndInfoStr=""
+
+        self.log.debug2("Cmnd Locs %s" % cmndLocs)
+        for devName, svcNames in cmndLocs.items():
+            for svcName in svcNames:
+                cmndInfoStr += "Cmnd:    %s \nDevice:  %s \nService: %s\n" % \
+                                (cmnd, devName, svcName)
+                self.log.debug2("Cmnd %s Device: %s Service: %s", cmnd, devName, svcName)
+                cmndParams=self.shoeRoot.getCmndParams(cmnd, svcName, devName)
+
+                #Remove redundant info for display
+                for cmndParam in cmndParams:
+                    try:
+                        del cmndParam[ShoeSvc.STATEVAR_KEY]
+                    except KeyError:
+                        pass
+
+                    try:
+                        del cmndParam[ShoeSvc.STATE_KEY][ShoeSvc.NAME_KEY]
+                    except KeyError:
+                        pass
+
+                fmtParams=self._fmtOp({'Parameters' : cmndParams})
+                cmndInfoStr += fmtParams
+                cmndInfoStr += "\n"
+                self.log.debug2("Command Info:\n %s" % fmtParams)
+
+        return cmndInfoStr
+
     def _fmtOp(self, opData, tab=0):
         fmt= '{0:>%s}{1:%s} : {2:<0}\n'%(tab, self.FMT_LBL_LEN)
         lblessFmt= '{0:>%s}{1:%s}   {2:<0}\n'%(tab, self.FMT_LBL_LEN)
@@ -125,6 +180,27 @@ class TestShoeOp(TestShoeHttp):
         return
 
     def _sendTestMsgs(self):
+        return
+
+class TestShoeOpTree(TestShoeOp):
+    def runTest(self):
+        fmtCmndTree=self.op.showCmndTree()
+        self.assertEqual(fmtCmndTree, self.testRootDev.fmtCmndTreeDflt)
+        return
+
+class TestShoeOpTreeAll(TestShoeOp):
+    def runTest(self):
+        fmtCmndTree=self.op.showCmndTree(showAll=True)
+        self.assertEqual(fmtCmndTree, self.testRootDev.fmtCmndTreeAll)
+        return
+
+class TestShoeOpInfo(TestShoeOp):
+    def runTest(self):
+        for cmndName,cmnd in self.testActSvc.cmnds.items():
+            fmtCmndInfo=self.op.showCmndInfo(cmndName, cmnd.svcName, cmnd.devName)
+            print("Expected %s" % cmnd.fmtCmndInfo)
+            print("Recieved %s" % fmtCmndInfo)
+            self.assertEqual(fmtCmndInfo, cmnd.fmtCmndInfo)
         return
 
 class TestShoeOpGetInfo(TestShoeOp):

@@ -25,12 +25,20 @@
 
 import argparse
 import sys
+from console_log import ConsoleLog
+from collections import OrderedDict
+from shoeExpert import *
+from shoeRoot import *
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--verbose', help="increase output verbosity",
+
+parser.add_argument('-q', '--quiet', help="make output quiet",
                     action='store_true')
 
-parser.add_argument('-H', '--Host', dest='host', nargs='+', required=True, action='append',
+parser.add_argument('-v', '--verbose', help="increase output verbosity",
+                    action='count')
+
+parser.add_argument('-H', '--Host', dest='hostIps', nargs='+', required=True, action='append',
                     help="This will set the host for the operation, usually an IP address.  "\
                         "At least one host is required.  For some operations (e.g. -b) multiple "\
                         "hosts can be given.  If only one host is required for the command, then "\
@@ -39,27 +47,27 @@ parser.add_argument('-H', '--Host', dest='host', nargs='+', required=True, actio
 parser.add_argument('-i', '--info', dest='info', default=False, action='store_true',
                         help="Displays info for devices.")
 
-parser.add_argument('-n', '--name', dest='spkrName', metavar='<Speaker Name>', nargs='+',
-                        action='append',
-                        help="This will name a speaker.  If multiple hosts are given, multiple "\
-                            "names may also be given.  Names will be assigned in order of hosts "\
-                            "given by the (-H) command")
-
-parser.add_argument('-b', '--bond', dest='bondName', metavar='<Bond Name>', nargs=1,
-                        help="This will bond all hosts given on command line with the (-H) command, "\
-                             "making a multichannel speaker grouping with the name <Bond Name>. The channel "\
-                             "assignment will be based on the order of hosts given by "\
-                             "the (-H) command: Right, Left, RearR, RearL, Center, Sub. "\
-                             "If two speakers are given, the pair will be stereo, and surround "\
-                             "speakers will be added for more than two speakers."
-                             "Speaker channels can be modified with the (-s) command.")
-
-parser.add_argument('-s', '--schan', metavar='<Speaker Channel>', nargs='+', action='append',
-                        choices=['NORMAL', 'LEFT', 'RIGHT', 'REAR_LEFT', 'REAR_RIGHT', 'LOW_FREQUENCY'],
-                        help="Sets the speaker channel for the host given by (-H). " \
-                         "If multiple hosts are given, then multiple channels can be assigned in" \
-                         "order of hosts. Can be one of the following: "\
-                         "['NORMAL', 'LEFT', 'RIGHT', 'REAR_LEFT', 'REAR_RIGHT', 'LOW_FREQUENCY']" )
+#parser.add_argument('-n', '--name', dest='spkrName', metavar='<Speaker Name>', nargs='+',
+#                        action='append',
+#                        help="This will name a speaker.  If multiple hosts are given, multiple "\
+#                            "names may also be given.  Names will be assigned in order of hosts "\
+#                            "given by the (-H) command")
+#
+#parser.add_argument('-b', '--bond', dest='bondName', metavar='<Bond Name>', nargs=1,
+#                        help="This will bond all hosts given on command line with the (-H) command, "\
+#                             "making a multichannel speaker grouping with the name <Bond Name>. The channel "\
+#                             "assignment will be based on the order of hosts given by "\
+#                             "the (-H) command: Right, Left, RearR, RearL, Center, Sub. "\
+#                             "If two speakers are given, the pair will be stereo, and surround "\
+#                             "speakers will be added for more than two speakers."
+#                             "Speaker channels can be modified with the (-s) command.")
+#
+#parser.add_argument('-s', '--schan', metavar='<Speaker Channel>', nargs='+', action='append',
+#                        choices=['NORMAL', 'LEFT', 'RIGHT', 'REAR_LEFT', 'REAR_RIGHT', 'LOW_FREQUENCY'],
+#                        help="Sets the speaker channel for the host given by (-H). " \
+#                         "If multiple hosts are given, then multiple channels can be assigned in" \
+#                         "order of hosts. Can be one of the following: "\
+#                         "['NORMAL', 'LEFT', 'RIGHT', 'REAR_LEFT', 'REAR_RIGHT', 'LOW_FREQUENCY']" )
 
 parser.add_argument('-e', '--expert', dest='expertCmnd', nargs=1, metavar='<Expert Command>',
                     help="Select an expert command.  This can only be done on a single host."\
@@ -77,6 +85,33 @@ parser.add_argument('-a', '--arg', dest='cmndArgs', nargs=2 , action='append',
 parser.add_argument('-l', '--list', required=False, action='store_true', default=False,
                     help="List expert commands arguments. Returns a list of args and arg value"\
                         "types for the command given by (-e)." )
-args=parser.parse_args()
 
-print(args)
+def main():
+    args=parser.parse_args()
+
+    print(args)
+
+    quite=False
+
+    if args.verbose==None:
+        logLvl=ConsoleLog.WARNING
+    elif args.verbose==1:
+        logLvl=ConsoleLog.INFO
+    elif args.verbose==2:
+        logLvl=ConsoleLog.DEBUG
+    elif args.verbose >= 3:
+        logLvl=ConsoleLog.DEBUG2
+    elif args.quiet==True:
+        logLvl=ConsoleLog.ERROR
+        quite=True
+
+    hostRoot=OrderedDict()
+
+    for hostIp in args.hostIps:
+        hostRoot[hostIp]=ShoeRoot(host=hostIp, logLvl=logLvl)
+
+    #if expertCmnd is not None or list is True or info is True:
+    #else
+
+if __name__=="__main__":
+    main()
