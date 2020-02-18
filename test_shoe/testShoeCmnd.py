@@ -60,14 +60,14 @@ class TestShoeCmnd():
     def fmtCmndRtn(self):
         if self.fmtRtn is None:
             rtn=\
-                '%sResponse\n' %\
-                self.name
+                '\nCmnd: %sResponse   Service: %s   Device: %s\n' %\
+                (self.name, self.svcName, self.devName)
 
         else:
             rtn=\
-                '%sResponse\n'\
+                '\nCmnd: %sResponse   Service: %s   Device: %s\n' \
                 '%s\n' %\
-                (self.name, self.fmtRtn)
+                (self.name, self.svcName, self.devName, self.fmtRtn)
         return rtn
 
     @property

@@ -27,6 +27,7 @@ from console_log import *
 from shoeRoot import *
 from collections.abc import Iterable
 from collections import OrderedDict
+from shoeMsg import *
 
 class ShoeOp():
     CURRSTATE_CMND='GetCurrentState'
@@ -39,21 +40,59 @@ class ShoeOp():
         self.loglvl=loglvl
         return
 
-    def getInfo(self):
+    def getInfo(self, infoLvl=0):
         infoFmt=self._fmtOp(self.shoeRoot.info)
+        self.log.info("Info Level %s", infoLvl)
+        if infoLvl > 0:
+            devNames=[]
+            if infoLvl==1:
+                devNames=ShoeRoot.PREFERRED_DEVS
+            elif infoLvl >= 2:
+                devNames=self.shoeRoot.devNames
+
+            self.log.debug("Info Level Devs %s", devNames)
+
+            currStLocs=OrderedDict()
+            for devName in devNames:
+                self.log.debug("Find Dev %s", devName)
+                cmndLocs=self.shoeRoot.findCmnd(self.CURRSTATE_CMND, None, devName)
+                self.log.debug("Found Locs %s", cmndLocs)
+                currStLocs.update(cmndLocs)
+
+            self.log.debug("Curr State Locs %s" % currStLocs)
+
+            for devName, svcNames in currStLocs.items():
+                for svcName in svcNames:
+                    self.log.debug("Getting CurrSt %s %s" % (svcName, devName))
+                    try:
+                        cmndResp=self.runCmnd(self.CURRSTATE_CMND, None, svcName, devName)
+                    except ShoeMsgHttpRtnStatusErr:
+                        pass
+
+                    self.log.debug("Cmnd Resp %s" % str(cmndResp))
+                    infoFmt += self._fmtOp(cmndResp)
+
         return infoFmt
 
     def runCmnd(self, cmnd, args, svcName=None, devName=None):
-        cmndRtn=self.shoeRoot.sendCmnd(cmnd, args, svcName, devName)
-        self.log.debug("Command Return:\n%s" % str(cmndRtn))
-        cmndRtnStr = "%s\n" % cmndRtn.cmnd
-        cmndRtnStr += self._fmtOp(cmndRtn.args)
-        self.log.debug("Cmnd Return String:\n%s" % cmndRtnStr)
-        return cmndRtnStr
+        cmndLocs=self.shoeRoot.findCmnd(cmnd, svcName, devName)
+        cmndRtnStr = ''
 
-    def getCurrState(self, svcName):
-        currStFmt=self.runCmnd(self.CURRSTATE_CMND, svcName=svcName)
-        return currStFmt
+        for devName, svcNames in cmndLocs.items():
+            for svcName in svcNames:
+                try:
+                    cmndRtn=self.shoeRoot.sendCmnd(cmnd, args, svcName, devName)
+                    self.log.debug("Command Return:\n%s" % str(cmndRtn))
+                    cmndRtnStr += "\nCmnd: %s   Service: %s   Device: %s\n" % \
+                               (cmndRtn.cmnd, svcName, devName)
+                    cmndRtnStr += self._fmtOp(cmndRtn.args)
+
+                except ShoeMsgHttpRtnStatusErr as e:
+                    cmndRtnStr += "HTTP Return Error Code %s\n" % (str(e))
+
+                self.log.debug("Cmnd Return String:\n%s" % cmndRtnStr)
+
+        return cmndRtnStr
 
     def showCmndTree(self, devName=None, showAll=False):
         cmndTree=self.shoeRoot.getCmndTree()
@@ -80,15 +119,16 @@ class ShoeOp():
 
     def showCmndInfo(self, cmnd, svcName=None, devName=None):
         cmndLocs=self.shoeRoot.findCmnd(cmnd, svcName, devName)
+        self.log.debug("Cmnd %s Device: %s Service: %s", cmnd, devName, svcName)
 
         cmndInfoStr=""
 
-        self.log.debug2("Cmnd Locs %s" % cmndLocs)
+        self.log.debug("Cmnd Locs %s" % cmndLocs)
         for devName, svcNames in cmndLocs.items():
             for svcName in svcNames:
                 cmndInfoStr += "Cmnd:    %s \nDevice:  %s \nService: %s\n" % \
                                 (cmnd, devName, svcName)
-                self.log.debug2("Cmnd %s Device: %s Service: %s", cmnd, devName, svcName)
+                self.log.debug("Cmnd %s Device: %s Service: %s", cmnd, devName, svcName)
                 cmndParams=self.shoeRoot.getCmndParams(cmnd, svcName, devName)
 
                 #Remove redundant info for display
@@ -194,7 +234,7 @@ class TestShoeOpTreeAll(TestShoeOp):
         self.assertEqual(fmtCmndTree, self.testRootDev.fmtCmndTreeAll)
         return
 
-class TestShoeOpInfo(TestShoeOp):
+class TestShoeOpCmndInfo(TestShoeOp):
     def runTest(self):
         for cmndName,cmnd in self.testActSvc.cmnds.items():
             fmtCmndInfo=self.op.showCmndInfo(cmndName, cmnd.svcName, cmnd.devName)

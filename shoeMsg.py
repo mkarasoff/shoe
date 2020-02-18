@@ -58,7 +58,7 @@ class ShoeMsg():
         self.loglvl=loglvl
 
         self._msgLen=0
-        self._payload=None
+        self._txHttpPayload=None
         self._soapaction=None
         self._httpReply=None
 
@@ -69,11 +69,12 @@ class ShoeMsg():
                         self.cmnd, self.urn, self.args)
         shoexml = ShoeMsgXml(cmnd=self.cmnd,
                             urn=self.urn,
-                            args=self.args)
+                            args=self.args,
+                            loglvl=self.loglvl)
 
-        self._payload = shoexml.genTree()
+        self._txHttpPayload = shoexml.genTree()
         self._soapaction='"%s#%s"' % (self.urn, self.cmnd)
-        self._msgLen=str(len(self._payload))
+        self._msgLen=str(len(self._txHttpPayload))
 
         self._post_cmd()
 
@@ -83,6 +84,7 @@ class ShoeMsg():
         self.reply=''
 
         self.log.debug("status %s" % self._httpReply.status)
+        self.log.debug("httpHeader %s" % str(self._httpReply.getheaders()))
 
         try:
             status = int(self._httpReply.status)
@@ -91,13 +93,13 @@ class ShoeMsg():
 
         if(int(status) == 200):
             try:
-                self._payloadRtn=self._httpReply.read()
-                shoeMsgXml = ShoeMsgXml(msgXml=self._payloadRtn)
+                self.log.debug("payload %s" % str(self._rxHttpPayload))
+                shoeMsgXml = ShoeMsgXml(msgXml=self._rxHttpPayload, loglvl=self.loglvl)
                 self.reply=shoeMsgXml.parseTree()
             except:
                 raise
         else:
-            raise ShoeMsgHttpRtnErr(str(status))
+            raise ShoeMsgHttpRtnStatusErr(str(status))
 
         if(self.urn != self.reply.urn):
             errMsg = "HTTP Rtn URN Mismatch %s %s" % (self.urn, self.reply.urn)
@@ -131,7 +133,7 @@ class ShoeMsg():
         conn.putheader('USER-AGENT' , ShoeMsg.USER_AGENT_VAL)
 
         try:
-            conn.endheaders(self._payload)
+            conn.endheaders(self._txHttpPayload)
         except Exception as e:
             raise ShoeMsgHttpSendErr("%s %s" % (str(e), host))
 
@@ -139,6 +141,8 @@ class ShoeMsg():
             self._httpReply = conn.getresponse()
         except Exception as e:
             raise ShoeMsgHttpSendErr("%s %s" % (str(e), host))
+
+        self._rxHttpPayload=self._httpReply.read()
 
         conn.close()
 
@@ -148,6 +152,8 @@ class ShoeMsg():
 class ShoeMsgHttpSendErr(Exception):
     pass
 class ShoeMsgHttpRtnErr(Exception):
+    pass
+class ShoeMsgHttpRtnStatusErr(Exception):
     pass
 
 ##############################UNIT TESTS########################################
@@ -234,27 +240,28 @@ class TestShoeMsgBroken(TestShoeMsgCmnds):
 
         return
 
-class TestShoeMsgBadHost(TestShoeMsgBroken):
-    def _checkErr(self, e):
-        errMsg=str(e)
-        print("ERROR MESSAGE:", errMsg)
-        if type(e) is ShoeMsgHttpSendErr:
-            errStr=errMsg[:errMsg.find(']')+1]
-            if(errStr != "[Errno -2]" and errStr != "[Errno -3]"):
-                raise e
-        else:
-            raise e
-        return
-
-    def _modTestCmnd(self, testCmnd):
-        self.host = 'ni.shrubbery'
-        return testCmnd
+#For a network connected computer, this runs slow.
+#class TestShoeMsgBadHost(TestShoeMsgBroken):
+#    def _checkErr(self, e):
+#        errMsg=str(e)
+#        print("ERROR MESSAGE:", errMsg)
+#        if type(e) is ShoeMsgHttpSendErr:
+#            errStr=errMsg[:errMsg.find(']')+1]
+#            if(errStr != "[Errno -2]" and errStr != "[Errno -3]"):
+#                raise e
+#        else:
+#            raise e
+#        return
+#
+#    def _modTestCmnd(self, testCmnd):
+#        self.host = 'ni.shrubbery'
+#        return testCmnd
 
 class TestShoeMsgBadRequest(TestShoeMsgCmnds):
     def _checkErr(self, e):
         errMsg=str(e)
         print("ERROR MESSAGE:", errMsg, type(e), self.errRtn)
-        if type(e) is ShoeMsgHttpRtnErr:
+        if type(e) is ShoeMsgHttpRtnStatusErr:
             if(int(errMsg) != self.errRtn):
                 raise e
         elif type(e) is ShoeMsgHttpSendErr:

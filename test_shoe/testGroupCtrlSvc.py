@@ -111,7 +111,7 @@ class TestGroupCtrlSvc(TestShoeSvc):
                     {'relatedStateVariable': 'LastChange', 'direction': 'out', 'name': 'CurrentState',\
                      'state' : {'dataType': 'string', '@sendEvents': 'yes', 'name': 'LastChange'}},]
 
-        cmnd.rtn=OrderedDict([('CurrentState', {}),])
+        cmnd.rtn=OrderedDict([('CurrentState', ''),])
         cmnd.fmtRtn='CurrentState     : '
         self.cmnds[cmnd.name]=cmnd
 

@@ -31,6 +31,9 @@ import sys
 from collections import defaultdict
 
 class ShoeCmnd(ShoeMsg):
+    EVENT_TAG='<Event'
+    EVENT_IDX=6
+
     def __init__(self,
                 host, path, urn,
                 cmnd, argsIn=OrderedDict(), argsCfg=None,
@@ -101,6 +104,10 @@ class ShoeCmnd(ShoeMsg):
 
     def _formatArgs(self, args, argsCfg, formatFunc=None):
         fmtArgs=OrderedDict()
+
+        if args is None:
+            args={}
+
         for argName, argVal in args.items():
             try:
                 self.log.debug("Args Cfg: %s", argsCfg)
@@ -124,11 +131,11 @@ class ShoeCmnd(ShoeMsg):
     def _formatReplyArg(self, arg, argCfg):
         stateCfg=argCfg['state']
         cfgArgType=stateCfg['dataType']
-        event=stateCfg['@sendEvents']
         replyTrue=['true', 'True', 'TRUE', True]
         replyFalse=['false', 'False', 'FALSE', False]
 
-        self.log.debug("ArgType %s Event %s", cfgArgType, event)
+        self.log.debug("ArgType %s", cfgArgType)
+        self.log.debug("Arg %s", arg)
 
         errMsg='Incorrect Type %s for reply arg %s' %\
                 (cfgArgType, arg)
@@ -136,7 +143,8 @@ class ShoeCmnd(ShoeMsg):
         if (cfgArgType == 'string'):
             if (type(arg) is not str):
                 raise ShoeCmndErr(errMsg)
-            if event == 'yes':
+
+            if arg[:self.EVENT_IDX] == self.EVENT_TAG:
                 eventParser=ShoeEventParser(arg, self.loglvl)
                 argRtn=eventParser.parse()
             else:

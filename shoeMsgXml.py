@@ -44,7 +44,7 @@ class ShoeMsgXml():
 
     ShoeMsgParse = namedtuple('ShoeMsgParse', 'cmnd urn args')
 
-    def __init__(self, cmnd='', urn='', args={}, msgXml=None, loglvl=0):
+    def __init__(self, cmnd='', urn='', args={}, msgXml=None, loglvl=ConsoleLog.WARNING):
         self.log=ConsoleLog(self.__class__.__name__, loglvl)
         self.cmnd = cmnd
         self.urn = urn
