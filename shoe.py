@@ -53,13 +53,13 @@ parser.add_argument('-i', '--info', dest='info', action='count', default=0,
 parser.add_argument('-t', '--tree', dest='showTree', action='count', default=0,
                         help="Displays Command Tree.")
 
-#parser.add_argument('-n', '--name', dest='spkrName', metavar='<Speaker Name>',
-#                            nargs='+', action='append',
-#                        help="This will name a speaker.  If multiple hosts "\
-#                               "are given, multiple names may also be "\
-#                               "given.  Names will be assigned in order of"\
-#                               "hosts given by the (-H) command")
-#
+parser.add_argument('-n', '--name', dest='spkrName', default=None,
+                            metavar='<Speaker Name>',
+                        help="This will name a speaker.  If multiple hosts "\
+                               "are given, multiple names may also be "\
+                               "given.  Names will be assigned in order of"\
+                               "hosts given by the (-H) command")
+
 #parser.add_argument('-b', '--bond', dest='bondName', metavar='<Bond Name>',
 #                                    nargs=1,
 #                        help="This will bond all hosts given on command "\
@@ -110,7 +110,8 @@ parser.add_argument('-a', '--arg', dest='cmndArgs', nargs=2 , action='append',
                         "use more (-a). If all required arguments are "\
                         "given, with -e, the command will run.")
 
-parser.add_argument('-l', '--list', nargs='*', dest='listArgsCmnds',
+parser.add_argument('-l', '--list', nargs='+', dest='listArgsCmnds',
+                       metavar='<Command>',
                     help="List expert commands arguments. Returns a list "\
                             "of args and arg value types for the "\
                             "command given by (-e)." )
@@ -144,14 +145,9 @@ def main():
         hostRoot[hostIp].setUp()
 
     ops={}
-    if (args.expertCmnd is not None or
-            args.listArgsCmnds is not None or
-            args.info > 0 or
-            args.showTree > 0):
-
-        for hostIp in hostIps:
-            ops[hostIp]=ShoeOp(shoeRoot=hostRoot[hostIp],
-                                loglvl=loglvl)
+    for hostIp in hostIps:
+        ops[hostIp]=ShoeOp(shoeRoot=hostRoot[hostIp],
+                            loglvl=loglvl)
 
     if args.info > 0:
         for hostIp in hostIps:
@@ -186,6 +182,10 @@ def main():
                                             args.device)
 
             print(cmndRtnFmt)
+
+    if args.spkrName is not None:
+        cmndRtn=ops[hostIps[0]].setName(args.spkrName)
+        print("Set name to", cmndRtn)
 
     return
 

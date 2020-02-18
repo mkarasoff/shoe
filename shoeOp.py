@@ -34,6 +34,15 @@ class ShoeOp():
     FMT_LBL_LEN=16
     FMT_TAB_LEN=4
 
+    CFG_DEV='ACT-Denon'
+    CFG_SVC='ACT'
+    CFG_TOKEN_CMND='GetConfigurationToken'
+
+    CFG_SET_NAME_CMND='SetFriendlyName'
+    CFG_GET_NAME_CMND='GetFriendlyName'
+
+    CFG_APPLY_CHANGE='ApplyChanges'
+
     def __init__(self, shoeRoot, loglvl=0):
         self.log=ConsoleLog(self.__class__.__name__, loglvl)
         self.shoeRoot=shoeRoot
@@ -73,6 +82,31 @@ class ShoeOp():
                     infoFmt += self._fmtOp(cmndResp)
 
         return infoFmt
+
+    def getCfgToken(self):
+        cmndRtn=self.shoeRoot.sendCmnd(self.CFG_TOKEN_CMND,
+                                        None,
+                                        self.CFG_SVC,
+                                        self.CFG_DEV)
+
+        return cmndRtn.args['configurationToken']
+
+    def applyChanges(self):
+        self.shoeRoot.sendCmnd(self.CFG_APPLY_CHANGE, None, self.CFG_SVC, self.CFG_DEV)
+        return
+
+    def setName(self, name):
+        args=OrderedDict()
+        args['configurationToken']=self.getCfgToken()
+        args['friendlyName']=name
+
+        self.shoeRoot.sendCmnd(self.CFG_SET_NAME_CMND, args, self.CFG_SVC, self.CFG_DEV)
+        self.applyChanges()
+
+        cmndRtn=self.shoeRoot.sendCmnd(self.CFG_GET_NAME_CMND, None,
+                                        self.CFG_SVC, self.CFG_DEV)
+
+        return cmndRtn.args['friendlyName']
 
     def runCmnd(self, cmnd, args, svcName=None, devName=None):
         cmndLocs=self.shoeRoot.findCmnd(cmnd, svcName, devName)
