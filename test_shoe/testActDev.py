@@ -58,25 +58,4 @@ class TestActDev(TestShoeDev):
 
         self.svcs={'ACT' : TestActSvc(self.name)}
 
-        self.infoFmt=\
-            "deviceType       : urn:schemas-denon-com:device:ACT-Denon:1\n"\
-            "manufacturer     : Denon\n"\
-            "manufacturerURL  : http://www.denon.com\n"\
-            "modelName        : HEOS 1\n"\
-            "modelNumber      : DWS-1000 4.0\n"\
-            "serialNumber     : ACJG9876543210\n"\
-            "UDN              : uuid:ea6e8d44-2442-11ea-978f-2e728ce88125\n"\
-            "DeviceID         : AIOS:0001\n"\
-            "firmwareRevision : 147202\n"\
-            "firmware_date    : Sun 2019-01-01 00:00:00\n"\
-            "firmware_version : 1.520.200\n"\
-            "lanMac           : 00:05:CD:00:00:01\n"\
-            "locale           : en_NA\n"\
-            "moduleRevision   : 4\n"\
-            "moduleType       : Aios 4.0\n"\
-            "productRevision  : 3\n"\
-            "releaseType      : Production\n"\
-            "wlanMac          : 00:05:CD:00:00:00\n"\
-            "devName          : ACT-Kitchen\n"\
-
         return

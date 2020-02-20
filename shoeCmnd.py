@@ -151,12 +151,10 @@ class ShoeCmnd(ShoeMsg):
                 argRtn=arg
 
         elif (cfgArgType == 'boolean'):
-            if arg in replyTrue:
-                argRtn = True
-            elif arg == replyFalse:
-                argRtn = False
-            else:
+            if(int(arg) != 0 and int(arg) != 1):
                 raise ShoeCmndErr(errMsg)
+
+            argRtn = str(int(arg))
 
         elif (cfgArgType[:2] == 'ui'):
             try:
@@ -168,32 +166,29 @@ class ShoeCmnd(ShoeMsg):
 
         return argRtn
 
-    def _formatCmndArg(self, argVal, argCfg):
+    def _formatCmndArg(self, arg, argCfg):
         cmndArgs={}
 
         stateCfg=argCfg['state']
         cfgArgType=stateCfg['dataType']
 
-        errMsg='Incorrect Type %s for send argVal %s' %\
-                (cfgArgType, argVal)
+        errMsg='Incorrect Type %s for send arg %s' %\
+                (cfgArgType, arg)
 
         if (cfgArgType == 'string'):
-            if (type(argVal) is not str):
+            if (type(arg) is not str):
                 raise ShoeCmndErr(errMsg)
-            argRtn=argVal
+            argRtn=arg
 
         elif (cfgArgType == 'boolean'):
-            if(type(argVal) is not bool):
+            if(int(arg) != 0 and int(arg) != 1):
                 raise ShoeCmndErr(errMsg)
 
-            if argVal == True:
-                argRtn = 'true'
-            else:
-                argRtn = 'false'
+            argRtn = str(int(arg))
 
         elif (cfgArgType[:2] == 'ui'):
             try:
-                argRtn=str(int(argVal))
+                argRtn=str(int(arg))
             except ValueError:
                 raise ShoeCmndErr(errMsg)
             except:
@@ -261,8 +256,8 @@ class TestShoeCmnd(TestShoeHttp):
 
     def _sendTestMsgs(self):
         self.shoeCmnd = ShoeCmnd(host=self.host,
-                                path=self.path,
-                                urn=self.urn,
+                                path=self.cmnd.path,
+                                urn=self.cmnd.urn,
                                 cmnd=self.cmnd.name,
                                 argsIn=self.cmnd.args,
                                 argsCfg=self.cmnd.argsCfg,

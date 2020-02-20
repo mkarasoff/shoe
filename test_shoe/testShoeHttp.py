@@ -6,11 +6,13 @@
 #
 ##############################################################
 import unittest
-import threading
+from threading import Thread
+from socketserver import ThreadingMixIn
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from test_shoe import *
 import inspect
 import os
+import time
 
 class TestShoeHttp(unittest.TestCase):
     testRootDev=TestRootDev()
@@ -20,27 +22,14 @@ class TestShoeHttp(unittest.TestCase):
 
     def setUp(self):
         self.srvPort = 60006
-        self.srvHost = '127.0.0.1'
-        self.postRtn=None
-        self.getRtn=None
-        self.noReply=False
-        self.rtnCode=200
+        self.httpSrvData={}
+        self.httpSrvData['127.0.0.1'] = self.HandlerData(self)
+        self.testCbFunc = self._sendTestMsgs
+        self.testCbData = {}
 
-        self.path=None
-        self.cmnd=None
-        self.urn=None
-        self.args={}
-        self.argsCfg={}
-
-        self.testCmnd=None
-        self.srvRxMsg=None
-        self.srvRxHdr=None
-        self.httpHandler=self.TestShoeHttpHandler
-
-        self.sendCnt=0
+        self.sendCnt    = 0
 
         self.quiet=False
-        self.testCbFunc=self._sendTestMsgs
         return
 
     #Override This!  Gets called in httpTest() during data transaction.
@@ -52,47 +41,142 @@ class TestShoeHttp(unittest.TestCase):
     def _modTestCmnd(self, testCmnd):
         return testCmnd
 
-    def setTestCmnd(self, cmnd):
-        self.postRtn    = cmnd.rtnMsg
-        self.noReply    = cmnd.noReply
-        self.rtnCode    = cmnd.rtnCode
-        self.urn        = cmnd.urn
-        self.path       = cmnd.path
-        self.cmndName   = cmnd.name
-        self.args       = cmnd.args
-        self.argsCfg    = cmnd.argsCfg
-        self.testCmnd   = cmnd
+    @property
+    def httpHandler(self):
+        host=list(self.httpSrvData.keys())[0]
+        return self.httpSrvData[host].httpHandler
+
+    @httpHandler.setter
+    def httpHandler(self, httpHandler):
+        host=list(self.httpSrvData.keys())[0]
+        self.httpSrvData[host].httpHandler=httpHandler
         return
 
-    def httpTest(self, testCmnd=None, *args):
-        if testCmnd is not None:
-            self._modTestCmnd(testCmnd)
+    @property
+    def getRtn(self):
+        host=list(self.httpSrvData.keys())[0]
+        return self.httpSrvData[host].getRtn
 
-        if testCmnd is not None:
-            self.setTestCmnd(testCmnd)
+    @getRtn.setter
+    def getRtn(self, getRtn):
+        host=list(self.httpSrvData.keys())[0]
+        self.httpSrvData[host].getRtn=getRtn
+        return
 
-        self.TestShoeHttpHandler.callObj=self
-        self.TestShoeHttpHandler.postRtn=self.postRtn
-        self.TestShoeHttpHandler.getRtn=self.getRtn
-        self.TestShoeHttpHandler.noReply=self.noReply
-        self.TestShoeHttpHandler.rtnCode=self.rtnCode
+    @property
+    def srvRxHdr(self):
+        host=list(self.httpSrvData.keys())[0]
+        return self.httpSrvData[host].srvRx[0]
+
+    @property
+    def srvRxMsg(self):
+        host=list(self.httpSrvData.keys())[0]
+        return self.httpSrvData[host].srvRx[1]
+
+    @property
+    def testCmnd(self):
+        host=list(self.httpSrvData.keys())[0]
+        return self.httpSrvData[host].cmnd
+
+    def getSrvRx(self, host):
+        return self.httpSrvData[host].srvRx
+
+    class HandlerData():
+        def __init__(self, parent):
+            self.getRtn     = None
+
+            self.srvRx      = ('','')
+
+            self.httpHandler= parent.TestShoeHttpHandler
+
+            self.postRtn    = None
+            self.noReply    = False
+            self.rtnCode    = 200
+            self.cmnd       = None
+
+        def setTestCmnd(self, cmnd):
+            self.postRtn    = cmnd.rtnMsg
+            self.noReply    = cmnd.noReply
+            self.rtnCode    = cmnd.rtnCode
+            self.cmnd       = cmnd
+            return
+
+    def setHosts(self, hosts):
+        self.httpSrvData={}
+        for host in hosts:
+            self.httpSrvData[host]=self.HandlerData(self)
+        return
+
+    def setHandler(self, handler, host=None):
+        if host is None:
+            host=list(self.httpSrvData.keys())[0]
+        self.httpSrvData[host].httpHandler=handler
+        return
+
+    def setGetRtn(self, getRtn, host=None):
+        if host is None:
+            self.getRtn=getRtn
+        else:
+            self.httpSrvData[host].getRtn=getRtn
+        return
+
+    def setTestCmnd(self, cmnd, hostIp=None):
+        if hostIp is not None:
+            self.httpSrvData[hostIp].setTestCmnd(cmnd)
+        else:
+            for hostIp in self.httpSrvData.keys():
+                self.httpSrvData[hostIp].setTestCmnd(cmnd)
+        return
+
+###################
+    class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
+        daemon_threads = True
+
+    def serveOnPort(self, httpSrv):
+        httpSrv.serve_forever()
+
+##################
+    def shutDownHttpSrvs(self):
+        for  httpSrv in self.httpSrvs:
+            ip,port=httpSrv.server_address
+            httpSrv.shutdown()
+            print("HTTPSrv Stop <<<<<<<<<<<<<<<<<<<<<<<<<", httpSrv, ip)
+        del self.httpSrvs
+        return
+
+    def httpTest(self, testCmnd=None, host=None):
+        if testCmnd is not None:
+            self.setTestCmnd(testCmnd, host)
+
+        self.TestShoeHttpHandler.srvData=self.httpSrvData
         self.TestShoeHttpHandler.quiet=self.quiet
 
-        httpd = HTTPServer((self.srvHost, self.srvPort), self.httpHandler)
-        httpSrvThread=threading.Thread(target=httpd.serve_forever)
-        httpSrvThread.deamon=True
+        self.httpSrvs=[]
+
+        for hostIp in self.httpSrvData.keys():
+            httpSrv = self.ThreadingHTTPServer((hostIp, self.srvPort), self.httpHandler)
+            self.httpSrvs.append(httpSrv)
+            httpSrvThread=Thread(target=httpSrv.serve_forever)
+
+            try:
+                httpSrvThread.start()
+            except:
+                self.shutDownHttpSrvs()
+                raise
+
+            print("HTTPSrv Start >>>>>>>>>>>>>>>>>>>>>>>>>", httpSrv, hostIp)
 
         try:
-            httpSrvThread.start()
             self.sendCnt=self.sendCnt+1
             #Customize test messages by overriding
             self.testCbFunc()
+
         except:
-            httpd.shutdown()
+            self.shutDownHttpSrvs()
             raise
 
-        httpd.shutdown()
-
+        self.shutDownHttpSrvs()
+        time.sleep(.1)
         return
 
     def runTest(self):
@@ -101,11 +185,8 @@ class TestShoeHttp(unittest.TestCase):
     class TestShoeHttpHandler(BaseHTTPRequestHandler):
         #The Python HTTP Server wants to send a 48byte server string
         # maybe can figure out how to solve this?
-        postRtn = None
-        callObj=None
-        rtnCode=200
-        noReply=False
-        getRtn=None
+
+        srvData=None
         quiet=False
 
         def _dbugPrt(self, *args):
@@ -113,8 +194,11 @@ class TestShoeHttp(unittest.TestCase):
                 print(*args)
 
         def do_GET(self):
-            self._dbugPrt("@@@@@@@@@@@@@@@@@@@@@@@GET@@@@@@@@@@@@@@@@@@@@@@")
-            if self.noReply:
+            host,port=self.server.server_address
+            self._dbugPrt("@@@@@@@@@@@@@@@@@@@@@@@GET %s@@@@@@@@@@@@@@@@@@@@@@" % host)
+            params=self.srvData[host]
+
+            if params.noReply:
                 return
 
             reqPath = self.path
@@ -127,8 +211,8 @@ class TestShoeHttp(unittest.TestCase):
             self.send_response(200)
             self.end_headers()
 
-            if self.getRtn:
-                rtnMsg=self.getRtn
+            if params.getRtn:
+                rtnMsg=params.getRtn
 
             elif reqPath == testActSvc.scpdPath:
                 rtnMsg=testActSvc.xmlStr
@@ -151,24 +235,28 @@ class TestShoeHttp(unittest.TestCase):
             return
 
         def do_POST(self):
-            if self.noReply:
+            host,port=self.server.server_address
+            self._dbugPrt("@@@@@@@@@@@@@@@@@@@POST %s@@@@@@@@@@@@@@@@@@@@@@@" % host)
+            params=self.srvData[host]
+
+            if params.noReply:
                 return
-            self._dbugPrt("@@@@@@@@@@@@@@@@@@@POST@@@@@@@@@@@@@@@@@@@@@@@")
 
             headersIn=dict(self.headers)
             lengthIn=int(headersIn['CONTENT-LENGTH'])
 
-            if self.callObj is not None:
-                self.callObj.srvRxMsg = self.rfile.read(lengthIn).decode()
-                self.callObj.srvRxHdr = headersIn
+            srvRxMsg = self.rfile.read(lengthIn).decode()
+            srvRxHdr = headersIn
 
-                self._dbugPrt ("POST Req Msg", self.callObj.srvRxMsg)
-                self._dbugPrt ("POST Req Hdr", self.callObj.srvRxHdr)
+            params.srvRx = (srvRxHdr, srvRxMsg)
 
-            if self.rtnCode != 200:
-                self.send_error(self.rtnCode)
+            self._dbugPrt ("POST Req Msg", srvRxMsg)
+            self._dbugPrt ("POST Req Hdr", srvRxHdr)
+
+            if params.rtnCode != 200:
+                self.send_error(params.rtnCode)
             else:
-                msg=self.postRtn
+                msg=params.postRtn
                 self.sys_version=''
                 self.server_version='LINUX UPnP/1.0 Denon-Heos/147202'
                 self.send_response(200)

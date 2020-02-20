@@ -68,14 +68,25 @@ class TestRootDev(TestShoeXml):
                     'minor': '0'}}}
 
         self.infoDict=\
-                {'manufacturerURL': 'http://www.denon.com',\
-                'modelName': 'HEOS 1', \
-                'serialNumber': 'ACJG9876543210', \
-                'modelNumber': 'DWS-1000 4.0', \
-                'deviceType': 'urn:schemas-denon-com:device:AiosDevice:1', \
-                'friendlyName': 'Kitchen', \
-                'UDN': 'uuid:ea6e883a-2442-11ea-978f-2e728ce88125',\
-                'manufacturer': 'Denon'},\
+                {'manufacturerURL'  : 'http://www.denon.com',\
+                'modelName'         : 'HEOS 1', \
+                'serialNumber'      : 'ACJG9876543210', \
+                'modelNumber'       : 'DWS-1000 4.0', \
+                'deviceType'        : 'urn:schemas-denon-com:device:AiosDevice:1', \
+                'friendlyName'      : 'Kitchen', \
+                'UDN'               : 'uuid:ea6e883a-2442-11ea-978f-2e728ce88125',\
+                'manufacturer'      : 'Denon',\
+                'DeviceID'          : 'AIOS :0001',\
+                'firmwareRevision'  : '147202',\
+                'firmware_date'     : 'Sun 2019-01-01 00 :00 :00',\
+                'firmware_version'  : '1.520.200',\
+                'lanMac'            : '00 :05 :CD :00 :00 :01',\
+                'locale'            : 'en_NA',\
+                'moduleRevision'    : '4',\
+                'moduleType'        : 'Aios 4.0',\
+                'productRevision'   : '3',\
+                'releaseType'       : 'Production',\
+                'wlanMac'           : '00 :05 :CD :00 :00 :00'}
 
         self.infoFmt=\
             'friendlyName     : Kitchen\n'\
@@ -85,6 +96,17 @@ class TestRootDev(TestShoeXml):
             'modelNumber      : DWS-1000 4.0\n'\
             'serialNumber     : ACJG9876543210\n'\
             'UDN              : uuid:ea6e883a-2442-11ea-978f-2e728ce88125\n'\
+            'DeviceID         : AIOS:0001\n'\
+            'firmwareRevision : 147202\n'\
+            'firmware_date    : Sun 2019-01-01 00:00:00\n'\
+            'firmware_version : 1.520.200\n'\
+            'lanMac           : 00:05:CD:00:00:01\n'\
+            'locale           : en_NA\n'\
+            'moduleRevision   : 4\n'\
+            'moduleType       : Aios 4.0\n'\
+            'productRevision  : 3\n'\
+            'releaseType      : Production\n'\
+            'wlanMac          : 00:05:CD:00:00:00\n'
 
         return
 

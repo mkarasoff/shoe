@@ -60,20 +60,23 @@ parser.add_argument('-n', '--name', dest='spkrName', default=None,
                                "given.  Names will be assigned in order of"\
                                "hosts given by the (-H) command")
 
-#parser.add_argument('-b', '--bond', dest='bondName', metavar='<Bond Name>',
-#                                    nargs=1,
-#                        help="This will bond all hosts given on command "\
-#                                "line with the (-H) command, making a "\
-#                                "multichannel speaker grouping with the name "\
-#                                "<Bond Name>. The channel assignment will be "\
-#                                "based on the order of hosts given by the "\
-#                                "(-H) command: Right, Left, RearR, RearL, "\
-#                                "Center, Sub. If two speakers are given, "\
-#                                "the pair will be stereo, and surround "\
-#                                "speakers will be added for more than two "\
-#                                "speakers. Speaker channels can be modified "\
-#                                "with the (-s) command.")
-#
+parser.add_argument('-x', '--deleteBond', action='store_true',
+                        help="This will delete the bond")
+
+parser.add_argument('-b', '--bond', dest='bondName', nargs=1,
+                                   metavar='<Bond Name>',
+                        help="This will bond all hosts given on command "\
+                                "line with the (-H) command, making a "\
+                                "multichannel speaker grouping with the name "\
+                                "<Bond Name>. The channel assignment will be "\
+                                "based on the order of hosts given by the "\
+                                "(-H) command: Left, Right, RearL, RearR, "\
+                                "Center, Sub. If two speakers are given, "\
+                                "the pair will be stereo, and surround "\
+                                "speakers will be added for more than two "\
+                                "speakers. Speaker channels can be modified "\
+                                "with the (-s) command.")
+
 #parser.add_argument('-s', '--schan', metavar='<Speaker Channel>',
 #                         nargs='+', action='append',
 #                        choices=['NORMAL', 'LEFT', 'RIGHT',
@@ -93,12 +96,17 @@ parser.add_argument('-s', '--service', dest='service', default=None,
                         metavar='<Service Name>',
                     help="Select a service. ")
 
-parser.add_argument('-e', '--expert', dest='expertCmnd', default=None,
-                        metavar='<Expert Command>',
-                    help="Select an expert command.  This can only be done "\
-                            "on a single host.  If no argument is given, "\
-                            "then the command will list all available expert "\
-                            "commands for the host given by (-H).")
+parser.add_argument('-c', '--cmnd', dest='cmnd', default=None,
+                        metavar='<Command>',
+                    help="Select a command.  The command can be "\
+                            "followed by (-a) to give arguments for "\
+                            "the command.  If multiple hosts are "\
+                            "given with the (-H) option, the command "\
+                            "will be run on all hosts.  If device and "\
+                            "service are not specified with (-d) and "\
+                            "(-s) options, and the command name is "\
+                            "duplicated across services, it will be "\
+                            "run on all matching services.")
 
 parser.add_argument('-a', '--arg', dest='cmndArgs', nargs=2 , action='append',
                         metavar=('<Name>', '<Value>'),
@@ -110,11 +118,11 @@ parser.add_argument('-a', '--arg', dest='cmndArgs', nargs=2 , action='append',
                         "use more (-a). If all required arguments are "\
                         "given, with -e, the command will run.")
 
-parser.add_argument('-l', '--list', nargs='+', dest='listArgsCmnds',
+parser.add_argument('-p', '--param', nargs='+', dest='parmaArgs',
                        metavar='<Command>',
-                    help="List expert commands arguments. Returns a list "\
-                            "of args and arg value types for the "\
-                            "command given by (-e)." )
+                    help="List command argument parameters. Returns "\
+                            "hints for argument parameters for the "\
+                            "command given by (-c)." )
 
 def main():
     args=parser.parse_args()
@@ -136,56 +144,67 @@ def main():
     log=ConsoleLog("shoe", loglvl)
     log.info("ARGS:%s", args)
 
-    hostRoot=OrderedDict()
+    hostRoots=OrderedDict()
 
+    #Host IPs come in as list of lists.  Flatten it here.
     hostIps=[ip for argIps in args.hostIps for ip in argIps]
 
     for hostIp in hostIps:
-        hostRoot[hostIp]=ShoeRoot(host=hostIp, loglvl=loglvl)
-        hostRoot[hostIp].setUp()
+        hostRoots[hostIp]=ShoeRoot(host=hostIp, loglvl=loglvl)
+        hostRoots[hostIp].setUp()
 
-    ops={}
-    for hostIp in hostIps:
-        ops[hostIp]=ShoeOp(shoeRoot=hostRoot[hostIp],
-                            loglvl=loglvl)
+    if bondName is not None:
+        bondOp=ShoeOp(shoeRoots=hostRoots.values(), loglvl=loglvl)
+        bondOp.bondSpkrs(bondName)
 
-    if args.info > 0:
+    elif delBond is True:
+        bondOp=ShoeOp(shoeRoots=hostRoots.values(), loglvl=loglvl)
+        bondOp.unbondSpkrs()
+
+    else:
+
+        ops={}
         for hostIp in hostIps:
-            infoRtn=ops[hostIp].getInfo(args.info-1)
-            print("\nInfo for", hostIp)
-            print("----------------")
-            print(infoRtn)
+            ops[hostIp]=ShoeOp(shoeRoot=hostRoots[hostIp],
+                                loglvl=loglvl)
 
-    if args.showTree > 0:
-        showAll = True if args.showTree == 2 else False
-        for hostIp in hostIps:
-            fmtCmndTree=ops[hostIp].showCmndTree(args.device, showAll)
-            print(fmtCmndTree)
+        if args.info > 0:
+            for hostIp in hostIps:
+                infoRtn=ops[hostIp].getInfo(args.info-1)
+                print("\nInfo for", hostIp)
+                print("----------------")
+                print(infoRtn)
 
-    if args.listArgsCmnds is not None:
-        for hostIp in hostIps:
-            for listArgsCmnd in args.listArgsCmnds:
-                listArgsFmt=\
-                        ops[hostIp].showCmndInfo(listArgsCmnd,
+        if args.showTree > 0:
+            showAll = True if args.showTree == 2 else False
+            for hostIp in hostIps:
+                fmtCmndTree=ops[hostIp].showCmndTree(args.device, showAll)
+                print(fmtCmndTree)
+
+        if args.parmaArgs is not None:
+            for hostIp in hostIps:
+                for listArgsCmnd in args.parmaArgs:
+                    listArgsFmt=\
+                            ops[hostIp].showCmndInfo(listArgsCmnd,
+                                                    args.service,
+                                                    args.device)
+                    print(listArgsFmt)
+
+        cmndArgs = OrderedDict() if args.cmndArgs is None \
+                else OrderedDict(args.cmndArgs)
+
+        if args.cmnd is not None:
+            for hostIp in hostIps:
+                cmndRtnFmt=ops[hostIp].runCmnd(args.cmnd,
+                                                cmndArgs,
                                                 args.service,
                                                 args.device)
-                print(listArgsFmt)
 
-    cmndArgs = OrderedDict() if args.cmndArgs is None \
-            else OrderedDict(args.cmndArgs)
+                print(cmndRtnFmt)
 
-    if args.expertCmnd is not None:
-        for hostIp in hostIps:
-            cmndRtnFmt=ops[hostIp].runCmnd(args.expertCmnd,
-                                            cmndArgs,
-                                            args.service,
-                                            args.device)
-
-            print(cmndRtnFmt)
-
-    if args.spkrName is not None:
-        cmndRtn=ops[hostIps[0]].setName(args.spkrName)
-        print("Set name to", cmndRtn)
+        if args.spkrName is not None:
+            cmndRtn=ops[hostIps[0]].setName(args.spkrName)
+            print("Set name to", cmndRtn)
 
     return
 

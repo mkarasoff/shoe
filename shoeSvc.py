@@ -307,7 +307,6 @@ class TestShoeCtrlSvc(TestShoeHttp):
         self.shoeMsg=None
         self.path=None
         self.method=None
-        self.urn=None
         self.msgArgs={}
 
         self.port=60006

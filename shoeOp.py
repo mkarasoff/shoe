@@ -283,6 +283,7 @@ class TestShoeOpGetInfo(TestShoeOp):
         return
 
     def runTest(self):
+        self.maxDiff=None
         rootDev=TestRootDev()
         self.infoFmt=self.op.getInfo()
         print(self.infoFmt)
