@@ -169,7 +169,10 @@ class ShoeCmnd(ShoeMsg):
     def _formatCmndArg(self, arg, argCfg):
         cmndArgs={}
 
+        self.log.debug("Arg %s Cfg %s", arg, argCfg)
         stateCfg=argCfg['state']
+
+        self.log.debug("StateCfg %s", stateCfg)
         cfgArgType=stateCfg['dataType']
 
         errMsg='Incorrect Type %s for send arg %s' %\
@@ -283,9 +286,10 @@ class TestShoeCmnds(TestShoeCmnd):
         return
 
     def _checkMsg(self, cmnd):
+
         self.assertEqual(self.shoeCmnd.cmnd, cmnd.name, 'Parse error: cmnd')
         self.assertEqual(self.shoeCmnd.urn, cmnd.urn, 'Parse error: urn')
-        self.assertEqual(self.shoeCmnd.args, cmnd.args, 'Parse error: urn')
+        self.assertDictEqual(self.shoeCmnd.args, cmnd.args)
         self.assertEqual(self.srvRxMsg, cmnd.msg)
         self.assertEqual(self.srvRxHdr, cmnd.hdr)
 

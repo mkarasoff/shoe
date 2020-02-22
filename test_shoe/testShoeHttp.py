@@ -86,6 +86,8 @@ class TestShoeHttp(unittest.TestCase):
             self.getRtn     = None
 
             self.srvRx      = ('','')
+            self.srvRxUrn   = None
+            self.srvRxCmnd  = None
 
             self.httpHandler= parent.TestShoeHttpHandler
 
@@ -250,9 +252,25 @@ class TestShoeHttp(unittest.TestCase):
 
             params.srvRx = (srvRxHdr, srvRxMsg)
 
+            params.srvRxUrn=None
+            params.srvRxCmnd=None
+
+            try:
+                soapAct=headersIn['SOAPACTION'].split('#')
+                params.srvRxUrn=soapAct[0]
+                params.srvRxCmnd=soapAct[1][:-1]
+
+            except (KeyError, IndexError):
+                pass
+
             self._dbugPrt ("POST Req Msg", srvRxMsg)
             self._dbugPrt ("POST Req Hdr", srvRxHdr)
 
+            self.postRtn(params, host)
+
+            return
+
+        def postRtn(self, params, host):
             if params.rtnCode != 200:
                 self.send_error(params.rtnCode)
             else:

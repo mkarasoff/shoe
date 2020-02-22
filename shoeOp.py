@@ -108,14 +108,17 @@ class ShoeOp():
 
         return cmndRtn.args['friendlyName']
 
-    def runCmnd(self, cmnd, args, svcName=None, devName=None):
-        cmndLocs=self.shoeRoot.findCmnd(cmnd, svcName, devName)
+    def runCmnd(self, cmnd, args, svcName=None, devName=None, shoeRoot=None):
+        if shoeRoot is None:
+            shoeRoot=self.shoeRoot
+
+        cmndLocs=shoeRoot.findCmnd(cmnd, svcName, devName)
         cmndRtnStr = ''
 
         for devName, svcNames in cmndLocs.items():
             for svcName in svcNames:
                 try:
-                    cmndRtn=self.shoeRoot.sendCmnd(cmnd, args, svcName, devName)
+                    cmndRtn=shoeRoot.sendCmnd(cmnd, args, svcName, devName)
                     self.log.debug("Command Return:\n%s" % str(cmndRtn))
                     cmndRtnStr += "\nCmnd: %s   Service: %s   Device: %s\n" % \
                                (cmndRtn.cmnd, svcName, devName)

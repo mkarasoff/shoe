@@ -26,6 +26,7 @@
 from .testShoeSvc import *
 from .testShoeEvent import *
 from .testShoeCmnd import *
+from .testZoneCtrlSvc import *
 from collections import OrderedDict
 
 class TestGroupCtrlSvc(TestShoeSvc):
@@ -35,13 +36,71 @@ class TestGroupCtrlSvc(TestShoeSvc):
                      'eventSubURL': '/upnp/event/AiosServicesDvc/GroupControl', \
                      'SCPDURL': '/upnp/scpd/AiosServicesDvc/GroupControl.xml'}
 
+    GROUP_UUID='17083c46d003001000800005cdfbb9c6'
+
     def __init__(self, devName='AiosServices', svcCfg=CFG):
         super().__init__(  xmlFile='GroupControl.xml',
                         md5hex='d2164658e60eedbe0c79090ceb1d904e',
                         devName=devName,
                         svcCfg=svcCfg)
 
-        self.groupUUID='17083c46d003001000800005cdfbb9c6'
+################################################################################
+        cmnd=TestShoeCmnd('GetGroupStatus', self.urn, self.cmndPath, self)
+        cmnd.argsCfg=  [\
+            {'relatedStateVariable': 'GroupUUID', 'direction': 'in', 'name': 'GroupUUID',\
+                    'state' : {'dataType': 'string', '@sendEvents': 'no', 'name': 'GroupUUID'}},\
+            {'relatedStateVariable': 'GroupStatus', 'direction': 'out', 'name': 'GroupStatus', \
+                    'state' : {'dataType': 'string', 'defaultValue': 'NONE', 'name':'GroupStatus',\
+                            '@sendEvents': 'no', 'allowedValueList': \
+                            {'allowedValue': ['LEADER', 'SLAVE', 'NONE']}}}]
+
+        cmnd.args=OrderedDict([('GroupUUID', self.GROUP_UUID),])
+        cmnd.rtn=OrderedDict([('GroupStatus', 'NONE'),])
+        cmnd.fmtRtn='GroupStatus      : NONE'
+
+        self.cmnds[cmnd.name]=cmnd
+
+################################################################################
+        cmnd=TestShoeCmnd('GetGroupUUID', self.urn, self.cmndPath, self)
+        cmnd.argsCfg=  [\
+            {'relatedStateVariable': 'GroupUUID', 'direction': 'out', 'name': 'GroupUUID',\
+                    'state' : {'dataType': 'string', '@sendEvents': 'no', 'name': 'GroupUUID'}},\
+            ]
+
+        cmnd.rtn=OrderedDict([('GroupUUID', self.GROUP_UUID),])
+        cmnd.fmtRtn='GroupUUID        : %s' % self.GROUP_UUID
+
+        self.cmnds[cmnd.name]=cmnd
+
+################################################################################
+        cmnd=TestShoeCmnd('DestroyGroup', self.urn, self.cmndPath, self)
+        cmnd.argsCfg=  [\
+            {'relatedStateVariable': 'GroupUUID', 'direction': 'in', 'name': 'GroupUUID',\
+                    'state' : {'dataType': 'string', '@sendEvents': 'no', 'name': 'GroupUUID'}},\
+            {'relatedStateVariable': 'PreserveZone', 'direction': 'in', 'name': 'PreserveZone', \
+                    'state' : {'dataType': 'boolean', 'defaultValue': '0', 'name': 'PreserveZone',\
+                            '@sendEvents': 'no'}}]
+
+        cmnd.args=OrderedDict([('GroupUUID', self.GROUP_UUID), ('PreserveZone', '0')])
+
+        self.cmnds[cmnd.name]=cmnd
+
+################################################################################
+        cmnd=TestShoeCmnd('GetGroupMemberChannel', self.urn, self.cmndPath, self)
+        cmnd.argsCfg=  [\
+            {'relatedStateVariable': 'GroupUUID', 'direction': 'in', 'name': 'GroupUUID',\
+                    'state' : {'dataType': 'string', '@sendEvents': 'no', 'name': 'GroupUUID'}},\
+            {'relatedStateVariable': 'AudioChannel', 'direction': 'out', 'name': 'AudioChannel',\
+                    'state' : {'dataType': 'string', 'defaultValue': 'NORMAL', 'name':'AudioChannel', \
+                        '@sendEvents': 'no', 'allowedValueList': {'allowedValue': \
+                            ['NORMAL', 'LEFT', 'RIGHT', 'REAR_LEFT', \
+                            'REAR_RIGHT', 'LOW_FREQUENCY', 'REAR_STEREO']} }},]
+
+        cmnd.args=OrderedDict([('GroupUUID', self.GROUP_UUID),])
+        cmnd.rtn=OrderedDict([('AudioChannel', 'LEFT'),])
+        cmnd.fmtRtn='AudioChannel     : LEFT'
+
+        self.cmnds[cmnd.name]=cmnd
 
 ################################################################################
         cmnd=TestShoeCmnd('SetGroupMemberChannel', self.urn, self.cmndPath, self)
@@ -56,7 +115,7 @@ class TestGroupCtrlSvc(TestShoeSvc):
                             'REAR_RIGHT', 'LOW_FREQUENCY', 'REAR_STEREO']} }},]
 
         cmnd.args=OrderedDict()
-        cmnd.args['GroupUUID']='17083c46d003001000800005cdfbb9c6'
+        cmnd.args['GroupUUID']=self.GROUP_UUID
         cmnd.args['AudioChannel']='LEFT'
 
         self.cmnds[cmnd.name]=cmnd
@@ -72,7 +131,7 @@ class TestGroupCtrlSvc(TestShoeSvc):
                      'allowedValueRange': {'step': '1', 'minimum': '0', 'maximum': '100'}, \
                      'name': 'GroupVolume', '@sendEvents': 'no' }},]
 
-        cmnd.args=OrderedDict([('GroupUUID', self.groupUUID),])
+        cmnd.args=OrderedDict([('GroupUUID', self.GROUP_UUID),])
         cmnd.rtn=OrderedDict([('GroupVolume', 90),])
         cmnd.fmtRtn='GroupVolume      : 90'
 
@@ -96,12 +155,11 @@ class TestGroupCtrlSvc(TestShoeSvc):
 
         cmnd.args = OrderedDict([ \
                         ('GroupFriendlyName', 'Jam'),\
-                        ('GroupMemberUUIDList',\
-                          'caf7916a94db1a1300800005cdfbb9c6,f3ddb59f3e691f1e00800005cdff1706'),\
+                        ('GroupMemberUUIDList',TestZoneCtrlSvc.ZONE_MEMBERS),
                         ('GroupMemberChannelList', '')])
 
-        cmnd.rtn=OrderedDict([('GroupUUID', self.groupUUID),])
-        cmnd.fmtRtn='GroupUUID        : %s' % self.groupUUID
+        cmnd.rtn=OrderedDict([('GroupUUID', self.GROUP_UUID),])
+        cmnd.fmtRtn='GroupUUID        : %s' % self.GROUP_UUID
 
         self.cmnds[cmnd.name]=cmnd
 ################################################################################

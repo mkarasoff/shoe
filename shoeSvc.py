@@ -170,9 +170,10 @@ class ShoeSvc(ShoeCfgXml):
         return cmndArgCfg
 
     def sendCmnd(self, cmnd, args={}):
+        self.log.debug("Cmnd %s Args %s", cmnd, args)
         argsCfg=self.getCmndArgs(cmnd)
 
-        self.log.debug("Cmnd %s Args %s ArgsCfg %s", cmnd, args, argsCfg)
+        self.log.debug("ArgsCfg %s", argsCfg)
 
         shoeCmnd=ShoeCmnd(  host=self.host,
                             path=self.path,
@@ -406,5 +407,5 @@ class TestShoeCtrlSvcArgs(TestShoeCtrlSvc):
         for cmndName in cmndNames:
             cmndArgsCfg=self.shoeSvc.getCmndArgs(cmndName)
 
-            self.assertCountEqual(testSvc.cmnds[cmndName].argsCfg,
+            self.assertEqual(testSvc.cmnds[cmndName].argsCfg,
                                     cmndArgsCfg)

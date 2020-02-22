@@ -28,6 +28,7 @@ import sys
 from console_log import ConsoleLog
 from collections import OrderedDict
 from shoeOp import *
+from shoeBond import *
 from shoeRoot import *
 from shoeMsg import *
 
@@ -77,16 +78,8 @@ parser.add_argument('-b', '--bond', dest='bondName', nargs=1,
                                 "speakers. Speaker channels can be modified "\
                                 "with the (-s) command.")
 
-#parser.add_argument('-s', '--schan', metavar='<Speaker Channel>',
-#                         nargs='+', action='append',
-#                        choices=['NORMAL', 'LEFT', 'RIGHT',
-#                                'REAR_LEFT', 'REAR_RIGHT', 'LOW_FREQUENCY'],
-#                        help="Sets the speaker channel for the host given by"\
-#                                "(-H). If multiple hosts are given, then "\
-#                                "multiple channels can be assigned in order "\
-#                                "of hosts. Can be one of the following: "\
-#                               "['NORMAL', 'LEFT', 'RIGHT', 'REAR_LEFT', "\
-#                                   "'REAR_RIGHT', 'LOW_FREQUENCY']" )
+parser.add_argument('-S', '--swap', action='store_true',
+                        help="Swaps left and right speakers")
 
 parser.add_argument('-d', '--device', dest='device', default=None,
                         metavar='<Device Name>',
@@ -153,16 +146,25 @@ def main():
         hostRoots[hostIp]=ShoeRoot(host=hostIp, loglvl=loglvl)
         hostRoots[hostIp].setUp()
 
-    if bondName is not None:
-        bondOp=ShoeOp(shoeRoots=hostRoots.values(), loglvl=loglvl)
-        bondOp.bondSpkrs(bondName)
+    if args.bondName is not None:
+        bondOp=ShoeBond(spkrRoots=list(hostRoots.values()), loglvl=loglvl)
+        bondRtn=bondOp.bondSpkrs(args.bondName[0])
+        print(bondRtn)
 
-    elif delBond is True:
-        bondOp=ShoeOp(shoeRoots=hostRoots.values(), loglvl=loglvl)
-        bondOp.unbondSpkrs()
+    elif args.deleteBond is True:
+        bondOp=ShoeBond(spkrRoots=list(hostRoots.values()), loglvl=loglvl)
+        try:
+            bondRtn=bondOp.unbondSpkrs()
+            print(bondRtn)
+        except ShoeBondGroupErr as e:
+            print(str(e))
+
+    elif args.swap is True:
+        bondOp=ShoeBond(spkrRoots=list(hostRoots.values()), loglvl=loglvl)
+        bondRtn=bondOp.swapStereoSpkrs()
+        print(bondRtn)
 
     else:
-
         ops={}
         for hostIp in hostIps:
             ops[hostIp]=ShoeOp(shoeRoot=hostRoots[hostIp],

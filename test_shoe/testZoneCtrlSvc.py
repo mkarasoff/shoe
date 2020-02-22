@@ -36,6 +36,9 @@ class TestZoneCtrlSvc(TestShoeSvc):
                      'eventSubURL': '/upnp/event/AiosServicesDvc/ZoneControl', \
                      'SCPDURL': '/upnp/scpd/AiosServicesDvc/ZoneControl.xml'}
 
+    ZONE_MEMBERS='caf7916a94db1a1300800005cdfbb9c6,f3ddb59f3e691f1e00800005cdff1706'
+    ZONE_UUID='17083c46d003001000800005cdfbb9c6'
+
     def __init__(self, devName='AiosServices', svcCfg=CFG):
         super().__init__(xmlFile='ZoneControl.xml',
                             md5hex='181615f9e5cc9c18f413ba3719afedb6',
@@ -43,7 +46,86 @@ class TestZoneCtrlSvc(TestShoeSvc):
                             svcCfg=svcCfg)
 
 ################################################################################
+        cmnd=TestShoeCmnd('GetZoneUUID', self.urn, self.cmndPath, self)
+        cmnd.argsCfg=  [\
+            {'relatedStateVariable': 'A_ARG_TYPE_ZoneUUID', 'direction': 'out', 'name': 'ZoneUUID',\
+                    'state' : {'dataType': 'string', '@sendEvents': 'no', 'name': 'A_ARG_TYPE_ZoneUUID'}},\
+            ]
+
+        cmnd.rtn=OrderedDict([('ZoneUUID', self.ZONE_UUID),])
+        cmnd.fmtRtn='ZoneUUID         : %s' % self.ZONE_UUID
+
+        self.cmnds[cmnd.name]=cmnd
+
+################################################################################
+        cmnd=TestShoeCmnd('CreateZone', self.urn, self.cmndPath, self)
+        cmnd.argsCfg=  [\
+                {'relatedStateVariable': 'ZoneFriendlyName', 'direction': 'in', 'name': 'ZoneFriendlyName',\
+                    'state' : {'dataType': 'string', '@sendEvents': 'no', 'name': 'ZoneFriendlyName'}},\
+                {'relatedStateVariable': 'A_ARG_TYPE_ZoneIPList', 'direction': 'in', 'name': 'ZoneIPList',\
+                    'state' : {'dataType': 'string', '@sendEvents': 'no', 'name': 'A_ARG_TYPE_ZoneIPList'}},\
+                {'relatedStateVariable': 'A_ARG_TYPE_ZoneUUID', 'direction': 'out', 'name': 'ZoneUUID',\
+                    'state' : {'dataType': 'string', '@sendEvents': 'no', 'name': 'A_ARG_TYPE_ZoneUUID'}}]
+
+        cmnd.args=OrderedDict([('ZoneFriendlyName', 'KITDIN'), ('ZoneIPList', '172.0.0.2')])
+
+        cmnd.rtn=OrderedDict([('ZoneUUID', self.ZONE_UUID),])
+        cmnd.fmtRtn='ZoneUUID         : %s' % self.ZONE_UUID
+
+        self.cmnds[cmnd.name]=cmnd
+
+################################################################################
+        cmnd=TestShoeCmnd('DestroyZone', self.urn, self.cmndPath, self)
+        cmnd.argsCfg=  [\
+            {'relatedStateVariable': 'A_ARG_TYPE_ZoneUUID', 'direction': 'in', 'name': 'ZoneUUID',\
+                    'state' : {'dataType': 'string', '@sendEvents': 'no', 'name': 'A_ARG_TYPE_ZoneUUID'}},\
+            ]
+
+        cmnd.args=OrderedDict([('ZoneUUID', self.ZONE_UUID),])
+
+        self.cmnds[cmnd.name]=cmnd
+
+################################################################################
+        cmnd=TestShoeCmnd('GetZoneConnectedList', self.urn, self.cmndPath, self)
+
+        cmnd.argsCfg= [\
+                    {'relatedStateVariable': 'A_ARG_TYPE_ZoneUUID', 'direction': 'in', 'name': 'ZoneUUID',\
+                     'state' : {'dataType': 'string', '@sendEvents': 'no', 'name': 'A_ARG_TYPE_ZoneUUID'}},\
+                    {'relatedStateVariable': 'ZoneConnectedList', 'direction': 'out', \
+                         'name': 'ZoneConnectedList',\
+                     'state' : {'dataType': 'string', '@sendEvents': 'no', 'name':\
+                         'ZoneConnectedList'}}]
+
+        cmnd.args=OrderedDict([('ZoneUUID', self.ZONE_UUID),])
+        cmnd.rtn=OrderedDict([('ZoneConnectedList', self.ZONE_MEMBERS),])
+        cmnd.fmtRtn='ZoneConnectedList : %s' % self.ZONE_MEMBERS
+
+        self.cmnds[cmnd.name]=cmnd
+
+################################################################################
+        cmnd=TestShoeCmnd('GetZoneVolume', self.urn, self.cmndPath, self)
+
+        cmnd.argsCfg= [\
+                    {'relatedStateVariable': 'A_ARG_TYPE_ZoneUUID', 'direction': 'in', 'name': 'ZoneUUID',\
+                     'state' : {'dataType': 'string', '@sendEvents': 'no', 'name': 'A_ARG_TYPE_ZoneUUID'}},\
+                    {'relatedStateVariable': 'ZoneVolume', 'direction': 'out','name': 'ZoneVolume',\
+                     'state' : {'dataType': 'ui1', 'defaultValue': '0', \
+                     'allowedValueRange': {'step': '1', 'minimum': '0', 'maximum': '100'}, \
+                     'name': 'ZoneVolume', '@sendEvents': 'no' }},]
+
+        cmnd.args=OrderedDict([('ZoneUUID', self.ZONE_UUID),])
+        cmnd.rtn=OrderedDict([('ZoneVolume', 90),])
+
+        cmnd.fmtRtn='ZoneVolume       : 90'
+
+        self.cmnds[cmnd.name]=cmnd
+
+################################################################################
         cmnd=TestShoeEvent('GetCurrentState', self.urn, self.cmndPath, self)
+
+        cmnd.argsCfg= [\
+                        {'relatedStateVariable': 'LastChange', 'direction': 'out', 'name': 'CurrentState',\
+                           'state' : {'dataType': 'string', '@sendEvents': 'yes', 'name': 'LastChange'}},]
 
         cmnd.rtnMsgBody='<CurrentState>&lt;Event xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/ZCS/&quot;&gt;&lt;'\
                 'ZoneConnectedList val=&quot;caf7916a94db1a1300800005cdfbb9c6,'\
@@ -57,18 +139,16 @@ class TestZoneCtrlSvc(TestShoeSvc):
 
         cmnd.rtn=OrderedDict([('CurrentState',
             OrderedDict([\
-                ('ZoneConnectedList',\
-                    'caf7916a94db1a1300800005cdfbb9c6,f3ddb59f3e691f1e00800005cdff1706'),\
+                ('ZoneConnectedList', self.ZONE_MEMBERS),\
                 ('ZoneFriendlyName', 'Family Room'), \
-                ('ZoneMemberList', \
-                    'caf7916a94db1a1300800005cdfbb9c6,f3ddb59f3e691f1e00800005cdff1706'), \
+                ('ZoneMemberList', self.ZONE_MEMBERS), \
                 ('ZoneMemberStatusList', \
                     'caf7916a94db1a1300800005cdfbb9c6,ZONE_LEAD,f3ddb59f3e691f1e00800005cdff1706,ZONE_SLAVE'), \
                 ('ZoneMute', '0'), \
                 ('ZoneStatus', 'ZONE_LEAD'), \
                 ('ZoneVolume', '31'), \
                 ('ZoneMinimise', '0'), \
-                ('ZoneUUID', '17083c46d003001000800005cdfbb9c6')]))])
+                ('ZoneUUID', self.ZONE_UUID)]))])
 
         cmnd.fmtRtn=\
             'CurrentState     : \n'\
@@ -81,10 +161,6 @@ class TestZoneCtrlSvc(TestShoeSvc):
             '    ZoneVolume       : 31\n'\
             '    ZoneMinimise     : 0\n'\
             '    ZoneUUID         : 17083c46d003001000800005cdfbb9c6'
-
-        cmnd.argsCfg= [\
-                        {'relatedStateVariable': 'LastChange', 'direction': 'out', 'name': 'CurrentState',\
-                           'state' : {'dataType': 'string', '@sendEvents': 'yes', 'name': 'LastChange'}},]
 
         self.cmnds[cmnd.name]=cmnd
 
