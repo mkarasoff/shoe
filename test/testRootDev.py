@@ -127,8 +127,8 @@ class TestRootDev(TestShoeXml):
     @property
     def fmtCmndTreeDflt(self):
         rtnTree=\
-            'ACT-Denon        : \n'\
-            '    ACT              : \n'\
+            'Device: ACT-Denon : \n'\
+            '    Service: ACT     : \n'\
             '    ----------------   \n'\
             '                           AddNetworkShare\n'\
             '                           ApplyChanges\n'\
@@ -194,13 +194,13 @@ class TestRootDev(TestShoeXml):
             '                           SubmitDiagnostics\n'\
             '                           UpdateFirmware\n'\
             '    ----------------   \n'\
-            'AiosServices     : \n'\
-            '    ErrorHandler     : \n'\
+            'Device: AiosServices : \n'\
+            '    Service: ErrorHandler : \n'\
             '    ----------------   \n'\
             '                           ClearError\n'\
             '                           DummyAction_ErrorHandler\n'\
             '    ----------------   \n'\
-            '    ZoneControl      : \n'\
+            '    Service: ZoneControl : \n'\
             '    ----------------   \n'\
             '                           AddMemberToZone\n'\
             '                           CreateZone\n'\
@@ -223,7 +223,7 @@ class TestRootDev(TestShoeXml):
             '                           SetZoneVolume\n'\
             '                           TestZoneConnectivity\n'\
             '    ----------------   \n'\
-            '    GroupControl     : \n'\
+            '    Service: GroupControl : \n'\
             '    ----------------   \n'\
             '                           AddMembersToGroup\n'\
             '                           CreateGroup\n'\
@@ -260,8 +260,8 @@ class TestRootDev(TestShoeXml):
     @property
     def fmtCmndTreeAll(self):
         rtnTree= self.fmtCmndTreeDflt+\
-            'MediaRenderer    : \n'\
-            '    AVTransport      : \n'\
+            'Device: MediaRenderer : \n'\
+            '    Service: AVTransport : \n'\
             '    ----------------   \n'\
             '                           GetCurrentState\n'\
             '                           GetCurrentTransportActions\n'\
@@ -282,7 +282,7 @@ class TestRootDev(TestShoeXml):
             '                           Stop\n'\
             '                           X_SetShuffle\n'\
             '    ----------------   \n'\
-            '    ConnectionManager : \n'\
+            '    Service: ConnectionManager : \n'\
             '    ----------------   \n'\
             '                           ConnectionComplete\n'\
             '                           GetCurrentConnectionIDs\n'\
@@ -291,7 +291,7 @@ class TestRootDev(TestShoeXml):
             '                           GetProtocolInfo\n'\
             '                           PrepareForConnection\n'\
             '    ----------------   \n'\
-            '    RenderingControl : \n'\
+            '    Service: RenderingControl : \n'\
             '    ----------------   \n'\
             '                           GetCurrentState\n'\
             '                           GetMute\n'\
@@ -314,8 +314,8 @@ class TestRootDev(TestShoeXml):
             '                           X_SetTreble\n'\
             '                           X_SetVolume\n'\
             '    ----------------   \n'\
-            'MediaServer      : \n'\
-            '    ContentDirectory : \n'\
+            'Device: MediaServer : \n'\
+            '    Service: ContentDirectory : \n'\
             '    ----------------   \n'\
             '                           Browse\n'\
             '                           GetSearchCapabilities\n'\
@@ -326,7 +326,7 @@ class TestRootDev(TestShoeXml):
             '                           X_RenameItem\n'\
             '                           X_SetItemInputLevel\n'\
             '    ----------------   \n'\
-            '    ConnectionManager : \n'\
+            '    Service: ConnectionManager : \n'\
             '    ----------------   \n'\
             '                           ConnectionComplete\n'\
             '                           GetCurrentConnectionIDs\n'\

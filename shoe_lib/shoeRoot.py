@@ -2,7 +2,7 @@
 #SHOE - An open source HEOS configuration and control project
 #Copyright (C) 2020  Mike Karasoff, mike@karatronics.com
 #
-#shoeRootDev.py
+#shoeRoot.py
 #Class that manages HEOS root device configuration.  It automatically
 #instantiates other HEOS devices.  It requires an Aiso XML file to work
 #will grab it from a HEOS device given by the 'host' variable.
@@ -25,7 +25,7 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##########################################################################
-from shoeDev import *
+from .shoeDev import *
 
 class ShoeRoot(ShoeDev):
     ROOTDEV_KEYS=('root', 'device')
@@ -35,25 +35,35 @@ class ShoeRoot(ShoeDev):
     PREFERRED_DEVS=('ACT-Denon', 'AiosServices')
 
     AIOS_CFG_PATH='/upnp/desc/aios_device/aios_device.xml'
+    DFLT_PORT=60006
 
     def __init__(self,
                     host,
                     aiosCfg=None,
                     loglvl=ConsoleLog.WARNING,
-                    port=60006):
+                    port=DFLT_PORT,
+                    path=AIOS_CFG_PATH,
+                    fileName=None,
+                    force=False
+                    ):
 
         super().__init__(host=host,
-                        loglvl=loglvl)
+                        loglvl=loglvl,
+                        fileName=fileName,
+                        path=path,
+                        port=port,
+                        force=force)
 
         self.name="root"
         self._devs=None
         self._aiosCfg=aiosCfg
         self.info={}
+
         return
 
     def setUp(self):
         if self._aiosCfg is None:
-            self._aiosCfg=self.getCfg(self.AIOS_CFG_PATH)
+            self._aiosCfg=self.getCfg(path=self.AIOS_CFG_PATH)
 
         self.cfg=self._getRootDevCfg(self._aiosCfg)
         self.log.debug2("Root Cfg: %s" % self.cfg)
@@ -133,45 +143,48 @@ class ShoeRoot(ShoeDev):
     def findCmnd(self, cmnd, svcName=None, devName=None):
         devs=OrderedDict()
 
-        self.log.debug("Find command %s devName %s svcName %s host %s",
-                    cmnd, devName, svcName, self.host)
-
-        if self._devs is None:
-            raise ShoeDevErr("Root Device Not Initialized")
-
-        if devName is None:
-            devNames=self.devNames
-
+        if svcName is not None and devName is not None:
+            devs[devName]=[svcName,]
         else:
-            devNames=[devName,]
+            self.log.debug("Find command %s devName %s svcName %s host %s",
+                        cmnd, devName, svcName, self.host)
 
-        self.log.debug("Looking for command %s devs %s",
-                    cmnd, devNames)
+            if self._devs is None:
+                raise ShoeDevErr("Root Device Not Initialized")
 
-        for name in devNames:
-            self.log.debug("Looking for command %s dev %s",
-                    cmnd, name)
+            if devName is None:
+                devNames=self.devNames
 
-            dev=self.getDev(name)
-            svcNames=dev.findCmnd(cmnd)
+            else:
+                devNames=[devName,]
 
-            if len(svcNames) is not 0:
-                self.log.debug("Found %s in %s for dev %s",
-                        cmnd, svcNames, devName)
-                if svcName is None:
-                    devs[name]=svcNames
-                    self.log.debug("Adding % as candidates for %s",
-                            svcNames, cmnd)
-                elif svcName in svcNames:
-                    devs[name]=[svcName,]
-                    self.log.debug("Found %s in %s",
-                            svcName, svcNames)
-                else:
-                    self.log.debug("%s not found in %s",
-                            svcName, devName)
+            self.log.debug("Looking for command %s devs %s",
+                        cmnd, devNames)
 
-        if(len(devs)==0):
-            raise ShoeRootDevErr("Cmnd %s Not Found" % cmnd)
+            for name in devNames:
+                self.log.debug("Looking for command %s dev %s",
+                        cmnd, name)
+
+                dev=self.getDev(name)
+                svcNames=dev.findCmnd(cmnd)
+
+                if len(svcNames) is not 0:
+                    self.log.debug("Found %s in %s for dev %s",
+                            cmnd, svcNames, devName)
+                    if svcName is None:
+                        devs[name]=svcNames
+                        self.log.debug("Adding % as candidates for %s",
+                                svcNames, cmnd)
+                    elif svcName in svcNames:
+                        devs[name]=[svcName,]
+                        self.log.debug("Found %s in %s",
+                                svcName, svcNames)
+                    else:
+                        self.log.debug("%s not found in %s",
+                                svcName, devName)
+
+            if(len(devs)==0):
+                raise ShoeRootDevErr("Cmnd %s Not Found" % cmnd)
 
         return devs
 
@@ -254,6 +267,7 @@ class ShoeRoot(ShoeDev):
             shoeDev=ShoeDev(cfg=devCfg,
                             host=self.host,
                             port=self.port,
+                            force=self.force,
                             loglvl=self.loglvl)
             shoeDev.setUp()
             shoeDevs[shoeDev.name]=shoeDev
@@ -276,45 +290,3 @@ class ShoeRoot(ShoeDev):
 ###############################Exceptions#################################
 class ShoeRootDevErr(Exception):
     pass
-
-##############################UNIT TESTS########################################
-from test_shoe import *
-
-class TestShoeRoot(TestShoeHttp):
-
-    def setUp(self):
-        super().setUp()
-        self.reply=None
-        self.port=60006
-        self.host='127.0.0.1'
-        self.rootDev=ShoeRoot(host=self.host, port=self.port, loglvl=logging.DEBUG)
-        self.testCbFunc=self._setUp
-        self.httpTest()
-        self.testCbFunc=self._sendTestMsgs
-        return
-
-    def _setUp(self):
-        self.rootDev.setUp()
-        return
-
-    def _sendTestMsgs(self):
-        cmnd = self.cmnd
-        print("Cmnd %s" % self.cmnd)
-        self.reply=self.rootDev.sendCmnd(cmnd.name, cmnd.args, cmnd.svcName, cmnd.devName)
-        return
-
-#Check a command within range.
-class TestShoeRootCmnds(TestShoeRoot):
-    def runTest(self):
-        for cmnd in self.testRootDev.cmnds:
-            print("^^^^^^^^TestShoeInRange %s %s %s^^^^^^^^" %
-                    (cmnd.svcName, cmnd.devName, cmnd))
-            self.cmnd=cmnd
-            self.httpTest(cmnd)
-
-            self.assertEqual(self.reply.args,
-                            cmnd.rtn)
-
-            #self.assertEqual(self.reply.cmnd,
-            #             cmnd.name + "Response")
-        return

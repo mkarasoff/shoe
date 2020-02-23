@@ -25,34 +25,39 @@
 
 import argparse
 import sys
-from console_log import ConsoleLog
 from collections import OrderedDict
-from shoeOp import *
-from shoeBond import *
-from shoeRoot import *
-from shoeMsg import *
+import shoe_lib
+from shoe_lib.shoeRoot import *
+from shoe_lib.shoeDev import *
+from shoe_lib.shoeOp import *
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument('-q', '--quiet', help="make output quiet",
                     action='store_true')
 
-parser.add_argument('-v', '--verbose', help="increase output verbosity",
-                    action='count', default=0)
+parser.add_argument('-v', '--verbose', action='count', default=0,\
+                    help="Increase output verbosity.  \'-vv\' and \'-vvv\' "\
+                        "will show more.")
 
-parser.add_argument('-H', '--Host', dest='hostIps', nargs='+', required=True,
+parser.add_argument('-H', '--Host', dest='hosts', nargs='+', required=True,
                         action='append',
                     help="This will set the host for the operation, usually "\
                             "an IP address.  At least one host is required.  "\
                             "For some operations (e.g. -b) multiple hosts "\
                             "can be given.  If only one host is required for "\
-                            "the command, then the first host will be used")
+                            "the command, then the first host will be used. \n"\
+                                "Port can be specified with \':\' as in "\
+                                "\'<host>:<port>\'")
 
 parser.add_argument('-i', '--info', dest='info', action='count', default=0,
-                        help="Displays info for devices.")
+                        help="Displays info for devices. \'-ii\' and \'-iii\' "\
+                                "will show more")
 
 parser.add_argument('-t', '--tree', dest='showTree', action='count', default=0,
-                        help="Displays Command Tree.")
+                        help="Displays Command Tree. Defaults to showing commands "\
+                                "from AIOS, Group, and  Zone services.  Add a "\
+                                "second t, \'-tt\' to show commands from all services.")
 
 parser.add_argument('-n', '--name', dest='spkrName', default=None,
                             metavar='<Speaker Name>',
@@ -61,7 +66,7 @@ parser.add_argument('-n', '--name', dest='spkrName', default=None,
                                "given.  Names will be assigned in order of"\
                                "hosts given by the (-H) command")
 
-parser.add_argument('-x', '--deleteBond', action='store_true',
+parser.add_argument('-u', '--unBond', action='store_true',
                         help="This will delete the bond")
 
 parser.add_argument('-b', '--bond', dest='bondName', nargs=1,
@@ -78,16 +83,32 @@ parser.add_argument('-b', '--bond', dest='bondName', nargs=1,
                                 "speakers. Speaker channels can be modified "\
                                 "with the (-s) command.")
 
-parser.add_argument('-S', '--swap', action='store_true',
+parser.add_argument('-s', '--swap', action='store_true',
                         help="Swaps left and right speakers")
 
-parser.add_argument('-d', '--device', dest='device', default=None,
+parser.add_argument('-f', '--force', action='store_true',
+                        help="Send commmand without parameter checks. Requires "\
+                                "\'-D\' and \'-S\' options to work correctly" )
+
+parser.add_argument('-D', '--device', dest='device', default=None,
                         metavar='<Device Name>',
                     help="Select a device. ")
 
-parser.add_argument('-s', '--service', dest='service', default=None,
+parser.add_argument('-F', '--rootFileName', default=None,
+                        metavar='<Root File Name>',
+                    help="Use file given by <Root File Name> for the root "\
+                            "configuration, rather than URL.")
+
+parser.add_argument('-S', '--service', dest='service', default=None,
                         metavar='<Service Name>',
                     help="Select a service. ")
+
+parser.add_argument('-x', '--rootUrlPath', default=ShoeRoot.AIOS_CFG_PATH,
+                        metavar='<Root URL Path>',
+                    help="Specifies a URL for the root XML configuration file. "\
+                            "By default, this is the config path is \"%s\", for HEOS1 "\
+                            "running firmware version 1.520.200" % \
+                                ShoeRoot.AIOS_CFG_PATH)
 
 parser.add_argument('-c', '--cmnd', dest='cmnd', default=None,
                         metavar='<Command>',
@@ -140,18 +161,29 @@ def main():
     hostRoots=OrderedDict()
 
     #Host IPs come in as list of lists.  Flatten it here.
-    hostIps=[ip for argIps in args.hostIps for ip in argIps]
+    hosts=[host for argHosts in args.hosts for host in argHosts]
 
-    for hostIp in hostIps:
-        hostRoots[hostIp]=ShoeRoot(host=hostIp, loglvl=loglvl)
-        hostRoots[hostIp].setUp()
+    for host in hosts:
+        hostIpPort=host.split(':')
+        hostIp=hostIpPort[0]
+        hostPort=ShoeRoot.DFLT_PORT
+        if len(hostIpPort) == 2:
+            hostPort=hostIpPort[1]
+
+        hostRoots[host]=ShoeRoot(host=hostIp,
+                                    port=hostPort,
+                                    path=args.rootUrlPath,
+                                    fileName=args.rootFileName,
+                                    force=args.force,
+                                    loglvl=loglvl)
+        hostRoots[host].setUp()
 
     if args.bondName is not None:
         bondOp=ShoeBond(spkrRoots=list(hostRoots.values()), loglvl=loglvl)
         bondRtn=bondOp.bondSpkrs(args.bondName[0])
         print(bondRtn)
 
-    elif args.deleteBond is True:
+    elif args.unBond is True:
         bondOp=ShoeBond(spkrRoots=list(hostRoots.values()), loglvl=loglvl)
         try:
             bondRtn=bondOp.unbondSpkrs()
@@ -166,28 +198,28 @@ def main():
 
     else:
         ops={}
-        for hostIp in hostIps:
-            ops[hostIp]=ShoeOp(shoeRoot=hostRoots[hostIp],
+        for host in hosts:
+            ops[host]=ShoeOp(shoeRoot=hostRoots[host],
                                 loglvl=loglvl)
 
         if args.info > 0:
-            for hostIp in hostIps:
-                infoRtn=ops[hostIp].getInfo(args.info-1)
-                print("\nInfo for", hostIp)
+            for host in hosts:
+                infoRtn=ops[host].getInfo(args.info-1)
+                print("\nInfo for", host)
                 print("----------------")
                 print(infoRtn)
 
         if args.showTree > 0:
             showAll = True if args.showTree == 2 else False
-            for hostIp in hostIps:
-                fmtCmndTree=ops[hostIp].showCmndTree(args.device, showAll)
+            for host in hosts:
+                fmtCmndTree=ops[host].showCmndTree(args.device, showAll)
                 print(fmtCmndTree)
 
         if args.parmaArgs is not None:
-            for hostIp in hostIps:
+            for host in hosts:
                 for listArgsCmnd in args.parmaArgs:
                     listArgsFmt=\
-                            ops[hostIp].showCmndInfo(listArgsCmnd,
+                            ops[host].showCmndInfo(listArgsCmnd,
                                                     args.service,
                                                     args.device)
                     print(listArgsFmt)
@@ -196,8 +228,8 @@ def main():
                 else OrderedDict(args.cmndArgs)
 
         if args.cmnd is not None:
-            for hostIp in hostIps:
-                cmndRtnFmt=ops[hostIp].runCmnd(args.cmnd,
+            for host in hosts:
+                cmndRtnFmt=ops[host].runCmnd(args.cmnd,
                                                 cmndArgs,
                                                 args.service,
                                                 args.device)
@@ -205,7 +237,7 @@ def main():
                 print(cmndRtnFmt)
 
         if args.spkrName is not None:
-            cmndRtn=ops[hostIps[0]].setName(args.spkrName)
+            cmndRtn=ops[hosts[0]].setName(args.spkrName)
             print("Set name to", cmndRtn)
 
     return

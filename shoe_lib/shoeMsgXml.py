@@ -2,7 +2,7 @@
 #SHOE - An open source HEOS configuration and control project
 #Copyright (C) 2020  Mike Karasoff, mike@karatronics.com
 #
-#shoeGroup.py
+#shoeMsgXml.py
 #Class impliments and parses xml messages for HEOS.  These
 #messages are XML and "soapy"
 #
@@ -23,7 +23,7 @@
 #You should have received a copy of the GNU General Public License
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-############################################################################from lxml import etree
+############################################################################
 from io import BytesIO
 from collections import OrderedDict
 from collections import namedtuple
@@ -150,61 +150,3 @@ class ShoeMsgXml():
                 msgElement.text=str(tagText)
 
         return bodyTree
-
-###############################Unittests#################################
-import unittest
-from test_shoe import *
-
-class TestShoeMsgXml(unittest.TestCase):
-    def setUp(self):
-        rootDev=TestRootDev()
-        self.testCmnds=rootDev.cmnds
-
-    def genMsg(self, cmnd):
-        cmndMsg=cmnd.msg.encode('utf-8')
-
-        shoeXml = ShoeMsgXml(cmnd=cmnd.name, urn=cmnd.urn, args=cmnd.args)
-        textRtn = shoeXml.genTree()
-
-        print(' ')
-        print('Gen: ')
-        print('Gen Text:', shoeXml.msgXml)
-        print('Cmp Text:', cmndMsg)
-
-        self.assertEqual(shoeXml.msgXml, cmndMsg, 'GenError: xmlTree')
-        self.assertEqual(textRtn, cmndMsg, 'GenErrorRtn: xmlTree')
-        return
-
-    def parseMsg(self, cmnd):
-        cmndMsg=cmnd.msg.encode('utf-8')
-
-        shoeXml  = ShoeMsgXml(msgXml=cmndMsg)
-        parseRtn = shoeXml.parseTree()
-
-        print(' ')
-        print('Parse: ')
-        print('Cmnd: ', shoeXml.cmnd, 'Cmnd Expected: ', cmnd.name)
-        print('URN: ', shoeXml.urn, 'URN Expected: ', cmnd.urn)
-        print('ARGs         : ', shoeXml.args)
-        print('ARGs Expected: ', cmnd.args)
-
-        self.assertEqual(shoeXml.cmnd, cmnd.name, 'Parse error: cmnd')
-        self.assertEqual(shoeXml.urn, cmnd.urn, 'Parse error: urn')
-
-        self.assertEqual(shoeXml.args, cmnd.args, 'Parse error: mesgDataArgs')
-
-        self.assertEqual(parseRtn.cmnd, cmnd.name, 'Parse error rtn: cmnd')
-        self.assertEqual(parseRtn.urn, cmnd.urn, 'Parse error rtn: urn')
-        self.assertEqual(parseRtn.args, cmnd.args, 'Parse error rtn: mesgDataArgs')
-
-class TestShoeMsgParse(TestShoeMsgXml):
-    def runTest(self):
-        for testCmnd in self.testCmnds:
-            self.parseMsg(testCmnd)
-        return
-
-class TestShoeMsgXmlGen(TestShoeMsgXml):
-    def runTest(self):
-        for testCmnd in self.testCmnds:
-            self.genMsg(testCmnd)
-        return

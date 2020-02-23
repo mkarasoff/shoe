@@ -25,7 +25,7 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ############################################################################
-from shoeSvc import *
+from .shoeSvc import *
 import hashlib
 
 class ShoeDev(ShoeSvc):
@@ -34,12 +34,16 @@ class ShoeDev(ShoeSvc):
 
     UUID_KEY='UDN'
 
-    def __init__(self, cfg=None, loglvl=ConsoleLog.WARNING, host=None, port=60006):
+    def __init__(self, cfg=None, path=None, fileName=None, loglvl=ConsoleLog.WARNING, host=None,
+            port=60006, force=False):
 
         super().__init__(host=host,
                         port=port,
                         cfg=cfg,
-                        loglvl=loglvl)
+                        loglvl=loglvl,
+                        fileName=fileName,
+                        path=path,
+                        force=force)
 
         self.name=None
         self._svcs=None
@@ -156,6 +160,7 @@ class ShoeDev(ShoeSvc):
             svc=ShoeSvc(host=self.host,
                         port=self.port,
                         loglvl=self.loglvl,
+                        force=self.force,
                         cfg=cfg,
                         devInst=self)
 
@@ -206,41 +211,3 @@ class ShoeDevUnknownParam(Exception):
 
 class ShoeDevNoSvcs(Exception):
     pass
-###############################Unittests#################################
-import unittest
-from test_shoe import *
-import time
-import urllib.parse
-
-class TestShoeAiosDev(unittest.TestCase):
-    HOST='127.0.0.1'
-
-    def setUp(self):
-        self.testRoot=TestRootDev()
-        self.testDevNames=['AiosServices', 'ACT-Denon']
-
-        return
-
-    def runTest(self):
-        for name in self.testDevNames:
-            dev=self.testRoot.devs[name]
-            self._devTest(dev)
-        return
-
-    def _devTest(self, dev):
-        print("@@@@@@@@@@@@@@@@@@Dev Test %s@@@@@@@@@@@@@@@@@@@@@@@"\
-                % dev.name)
-
-        shoeDev=ShoeDev(host=self.HOST,
-                        cfg=dev.cfg,
-                        loglvl=logging.DEBUG)
-
-        shoeDev.setUp()
-
-        self.assertEqual(dev.cfg, shoeDev.cfg)
-
-        self.assertEqual(dev.uuid, shoeDev.uuid)
-
-        self.assertEqual(dev.name, shoeDev.name)
-
-        return

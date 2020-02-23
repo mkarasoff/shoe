@@ -2,8 +2,8 @@
 #SHOE - An open source HEOS configuration and control project
 #Copyright (C) 2020  Mike Karasoff, mike@karatronics.com
 #
-#shoeMsg.py
-#Class that communicates messages to a HEOS device using HTTP PUT.
+#ut_shoeMsg.py
+#Unit test for shoeMsg module.
 #
 #
 ##########################################################################
@@ -23,142 +23,11 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ############################################################################
-import http.client, urllib.request, urllib.parse, urllib.error
-from http.client import HTTPConnection
-from collections import OrderedDict
-from shoeMsgXml import *
-import re
+##############################UNIT TESTS####################################
+from .testShoeHttp import *
+from shoe_lib.shoeMsg import *
 from lxml import etree
-from console_log import *
 
-class ShoeMsg():
-    PORT            = 60006
-
-    ACCEPT_RANGES_VAL   = 'bytes'
-    CONTENT_TYPE_VAL    = 'text/xml; charset="utf-8"'
-    USER_AGENT_VAL      = 'LINUX UPnP/1.0 Denon-Heos/149200'
-
-    def __init__(self,
-                    host,
-                    path,
-                    cmnd,
-                    urn,
-                    args=OrderedDict(),
-                    loglvl=ConsoleLog.WARNING):
-
-        self.log=ConsoleLog(self.__class__.__name__, loglvl)
-
-        self.host=host
-        self.path=path
-        self.cmnd=cmnd
-        self.urn=urn
-        self.args=args
-        self.reply=None
-
-        self.loglvl=loglvl
-
-        self._msgLen=0
-        self._txHttpPayload=None
-        self._soapaction=None
-        self._httpReply=None
-
-        return
-
-    def send(self):
-        self.log.debug("Cmnd %s, urn %s, args %s",
-                        self.cmnd, self.urn, self.args)
-        shoexml = ShoeMsgXml(cmnd=self.cmnd,
-                            urn=self.urn,
-                            args=self.args,
-                            loglvl=self.loglvl)
-
-        self._txHttpPayload = shoexml.genTree()
-        self._soapaction='"%s#%s"' % (self.urn, self.cmnd)
-        self._msgLen=str(len(self._txHttpPayload))
-
-        self._post_cmd()
-
-        return
-
-    def parse(self):
-        self.reply=''
-
-        self.log.debug("status %s" % self._httpReply.status)
-        self.log.debug("httpHeader %s" % str(self._httpReply.getheaders()))
-
-        try:
-            status = int(self._httpReply.status)
-        except:
-            raise ShoeMsgHttpRtnErr("Unknown")
-
-        if(int(status) == 200):
-            try:
-                self.log.debug("payload %s" % str(self._rxHttpPayload))
-                shoeMsgXml = ShoeMsgXml(msgXml=self._rxHttpPayload, loglvl=self.loglvl)
-                self.reply=shoeMsgXml.parseTree()
-            except:
-                raise
-        else:
-            raise ShoeMsgHttpRtnStatusErr(str(status))
-
-        if(self.urn != self.reply.urn):
-            errMsg = "HTTP Rtn URN Mismatch %s %s" % (self.urn, self.reply.urn)
-            raise ShoeMsgHttpRtnErr(errMsg)
-
-        cmndReply = self.cmnd + "Response"
-        if(cmndReply != self.reply.cmnd):
-            errMsg = "HTTP Rtn Method Mismatch %s %s" % (cmndReply, self.reply.cmnd)
-            raise ShoeMsgHttpRtnErr(errMsg)
-
-        return self.reply
-
-    def _post_cmd(self):
-
-        conn = http.client.HTTPConnection(self.host, ShoeMsg.PORT)
-
-        if self.loglvl <= self.log.DEBUG:
-            conn.set_debuglevel(1)
-        else:
-            conn.set_debuglevel(0)
-
-        conn.putrequest('POST', self.path, skip_host=True, skip_accept_encoding=True)
-
-        host="%s:%s" % (self.host, ShoeMsg.PORT)
-
-        conn.putheader('HOST', host)
-        conn.putheader('CONTENT-LENGTH', self._msgLen)
-        conn.putheader('Accept-Ranges', ShoeMsg.ACCEPT_RANGES_VAL)
-        conn.putheader('CONTENT-TYPE' , ShoeMsg.CONTENT_TYPE_VAL)
-        conn.putheader('SOAPACTION' , self._soapaction)
-        conn.putheader('USER-AGENT' , ShoeMsg.USER_AGENT_VAL)
-
-        try:
-            conn.endheaders(self._txHttpPayload)
-        except Exception as e:
-            raise ShoeMsgHttpSendErr("%s %s" % (str(e), host))
-
-        try:
-            self._httpReply = conn.getresponse()
-        except Exception as e:
-            raise ShoeMsgHttpSendErr("%s %s" % (str(e), host))
-
-        self._rxHttpPayload=self._httpReply.read()
-
-        conn.close()
-
-        return
-
-#############################EXCEPTIONS#########################################
-class ShoeMsgHttpSendErr(Exception):
-    pass
-class ShoeMsgHttpRtnErr(Exception):
-    pass
-class ShoeMsgHttpRtnStatusErr(Exception):
-    pass
-
-##############################UNIT TESTS########################################
-from test_shoe import *
-from random import *
 class TestShoeMsg(TestShoeHttp):
     #Set to 0 to do the long test.  Set to a number N>0 to itereate N
     FAST_TEST=1

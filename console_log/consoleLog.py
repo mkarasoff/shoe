@@ -96,7 +96,7 @@ class ConsoleLog(logging.getLoggerClass()):
         return
 
     def _makeConsoleHndlr(self, level):
-        if level==logging.DEBUG:
+        if level<=logging.WARNING:
             self._setFormatter(self.DBUG_FORMAT)
         else:
             self._setFormatter(self.RT_FORMAT)

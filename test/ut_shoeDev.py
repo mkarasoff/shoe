@@ -2,8 +2,8 @@
 #SHOE - An open source HEOS configuration and control project
 #Copyright (C) 2020  Mike Karasoff, mike@karatronics.com
 #
-#shoeZone.py
-#Class impliments ZoneControl service specific functions.
+#ut_shoeDev.py
+#Unit test for shoeDev module.
 #
 #
 ##########################################################################
@@ -23,19 +23,39 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ############################################################################
-from shoeSvc import *
-import copy
+###############################Unittests#################################
+from .testShoeHttp import *
+from shoe_lib.shoeDev import *
 
-class ShoeSvcZone(ShoeSvc):
-    DEV_NAME='AiosServices'
-    NAME='ZoneControl'
+class TestShoeAiosDev(unittest.TestCase):
+    HOST='127.0.0.1'
 
-    def __init__(self, host, loglvl=0, port=60006):
-        super().__init__(host=host,
-                         devTag=self.DEV_NAME,
-                         svcTag=self.NAME,
-                         loglvl=loglvl,
-                         port=port)
-        self.log=ConsoleLog(self.__class__.__name__, loglvl)
+    def setUp(self):
+        self.testRoot=TestRootDev()
+        self.testDevNames=['AiosServices', 'ACT-Denon']
+
+        return
+
+    def runTest(self):
+        for name in self.testDevNames:
+            dev=self.testRoot.devs[name]
+            self._devTest(dev)
+        return
+
+    def _devTest(self, dev):
+        print("@@@@@@@@@@@@@@@@@@Dev Test %s@@@@@@@@@@@@@@@@@@@@@@@"\
+                % dev.name)
+
+        shoeDev=ShoeDev(host=self.HOST,
+                        cfg=dev.cfg,
+                        loglvl=logging.DEBUG)
+
+        shoeDev.setUp()
+
+        self.assertEqual(dev.cfg, shoeDev.cfg)
+
+        self.assertEqual(dev.uuid, shoeDev.uuid)
+
+        self.assertEqual(dev.name, shoeDev.name)
 
         return

@@ -23,8 +23,8 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ############################################################################
-from shoeMsg import *
-from shoeEventParser import *
+from .shoeMsg import *
+from .shoeEventParser import *
 from collections import OrderedDict
 import copy
 import sys
@@ -36,9 +36,11 @@ class ShoeCmnd(ShoeMsg):
 
     def __init__(self,
                 host, path, urn,
-                cmnd, argsIn=OrderedDict(), argsCfg=None,
+                cmnd, argsIn=OrderedDict(),
+                argsCfg=None,
                 port=60006,
-                loglvl=None):
+                loglvl=None,
+                force=False):
 
         super().__init__(host=host,
                         path=path,
@@ -49,6 +51,7 @@ class ShoeCmnd(ShoeMsg):
         self.argsIn = argsIn
         self.argsCfg = argsCfg
         self.cmndReply=None
+        self.force=force
 
         self.log.debug("Cmnd %s" % cmnd)
         self.log.debug("Args %s" % argsIn)
@@ -59,7 +62,11 @@ class ShoeCmnd(ShoeMsg):
     def send(self):
         self.log.debug("Send Cmnd: %s \nArgs: %s \nArgsCfg: %s" %
                         (self.cmnd, self.argsIn, self.argsCfg))
-        self.args=self._formatCmnd(self.argsIn, self.argsCfg)
+
+        if self.force:
+            self.args=self.argsIn
+        else:
+            self.args=self._formatCmnd(self.argsIn, self.argsCfg)
         super().send()
         return
 
@@ -70,7 +77,12 @@ class ShoeCmnd(ShoeMsg):
         self.log.debug("Args %s" % self.args)
         self.log.debug("ArgsCfg %s" % self.argsCfg)
 
-        replyArgs=self._formatReply(msgReply.args, self.argsCfg)
+        replyArgs={}
+
+        if self.force:
+            replyArgs=msgReply.args
+        else:
+            replyArgs=self._formatReply(msgReply.args, self.argsCfg)
 
         self.cmndReply = ShoeMsgXml.ShoeMsgParse(cmnd=msgReply.cmnd,
                                             urn=msgReply.urn,
@@ -120,9 +132,6 @@ class ShoeCmnd(ShoeMsg):
 
             if formatFunc is not None:
                 fmtArgVal = formatFunc(argVal, argCfg)
-
-            self._checkAllowedVals(fmtArgVal, argCfg)
-            self._checkAllowedRange(fmtArgVal, argCfg)
 
             fmtArgs[argName] = fmtArgVal
 
@@ -197,6 +206,9 @@ class ShoeCmnd(ShoeMsg):
             except:
                 raise
 
+        self._checkAllowedVals(argRtn, argCfg)
+        self._checkAllowedRange(argRtn, argCfg)
+
         return argRtn
 
     def _checkAllowedVals(self, argVal, argCfg):
@@ -240,68 +252,3 @@ class ShoeCmnd(ShoeMsg):
 ###############################Exceptions#################################
 class ShoeCmndErr(Exception):
     pass
-##############################UNIT TESTS########################################
-from test_shoe import *
-
-class TestShoeCmnd(TestShoeHttp):
-    #Set to 0 to do the long test.  Set to a number N>0 to itereate N
-    FAST_TEST=0
-
-    def setUp(self):
-        super().setUp()
-
-        self.port=60006
-        self.host='127.0.0.1'
-        self.testRootDev=TestRootDev()
-        self.cmnds=self.testRootDev.cmnds
-        self.cmnd = None
-        return
-
-    def _sendTestMsgs(self):
-        self.shoeCmnd = ShoeCmnd(host=self.host,
-                                path=self.cmnd.path,
-                                urn=self.cmnd.urn,
-                                cmnd=self.cmnd.name,
-                                argsIn=self.cmnd.args,
-                                argsCfg=self.cmnd.argsCfg,
-                                loglvl=logging.DEBUG)
-        self.shoeCmnd.send()
-        self.shoeCmnd.parse()
-        self._checkMsg(self.cmnd)
-        return
-
-class TestShoeCmnds(TestShoeCmnd):
-    def runTest(self):
-        for cmnd in self.cmnds:
-            self.cmnd = cmnd
-            print("@@@@@@@@@@@@@@@@@@@@@@@ %s: Test %s @@@@@@@@@@@@@@@@@@@@@@@@@@@@@"\
-                    % (self.__class__.__name__, cmnd.name))
-            self.httpTest(cmnd)
-            print("@@@@@@@@@@@@@@@@@@@@@ %s: Test Done %s @@@@@@@@@@@@@@@@@@@@@@@@"\
-                    % (self.__class__.__name__, cmnd.name))
-
-            if self.FAST_TEST>0 and self.sendCnt > self.FAST_TEST:
-                    break
-
-        return
-
-    def _checkMsg(self, cmnd):
-
-        self.assertEqual(self.shoeCmnd.cmnd, cmnd.name, 'Parse error: cmnd')
-        self.assertEqual(self.shoeCmnd.urn, cmnd.urn, 'Parse error: urn')
-        self.assertDictEqual(self.shoeCmnd.args, cmnd.args)
-        self.assertEqual(self.srvRxMsg, cmnd.msg)
-        self.assertEqual(self.srvRxHdr, cmnd.hdr)
-
-        reply=self.shoeCmnd.cmndReply
-
-        print("reply", reply.args)
-        print("expected", cmnd.rtn)
-
-        self.assertEqual(reply.cmnd, cmnd.name + "Response", 'ParseErr: cmnd')
-        self.assertEqual(reply.urn, cmnd.urn, 'ParseErr: urn')
-        self.assertDictEqual(reply.args, cmnd.rtn)
-        #self.assertDictEqual(reply.args, cmnd.msgReplyArgs, 'Parse error: args\r %s \r %s' %
-        #        (reply.args, cmnd.msgReplyArgs) )
-
-        return

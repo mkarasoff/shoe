@@ -33,24 +33,50 @@ from io import BytesIO
 from console_log import *
 
 class ShoeCfgXml():
-    def __init__(self, host=None, path='', loglvl=ConsoleLog.WARNING, port=60006):
+    def __init__(self,
+                    host=None,
+                    path='',
+                    loglvl=ConsoleLog.WARNING,
+                    port=60006,
+                    fileName=None):
+
         self.log=ConsoleLog(self.__class__.__name__, loglvl)
-        self.loglvl=loglvl
+        self.loglvl = loglvl
         self.host = host
         self.port = port
         self.path = path
+        self.fileName = fileName
         self.xmlDict={}
         return
 
-    def getCfg(self, path=None):
+    def getCfg(self, path=None, fileName=None):
+        self.log.debug("Path %s FileName %s" % (path, fileName))
         if path is None:
             path=self.path
+        else:
+            self.path=path
 
-        self.xmlText = self._getXmlText(path,
+        if fileName is None:
+            fileName=self.fileName
+        else:
+            self.fileName=fileName
+
+        self.log.debug("Host %s:%s, Path %s, Filename %s" %
+                        (self.host, self.port, self.path, self.fileName))
+
+        if path is None and fileName is None:
+            raise ShoeCfgXmlErr("No file or url specified")
+
+        if fileName is None:
+            self.xmlText = self._getHttpXmlText(path,
                 self.host,
                 self.port)
+        else:
+            self.xmlText = self._getFileXmlText(self.fileName)
 
         self.xmlDict = self._getXmlDict(self.xmlText)
+
+        self.log.debug("XML Dict %s" % str(self.xmlDict))
 
         return self.xmlDict
 
@@ -68,7 +94,12 @@ class ShoeCfgXml():
 
         return xmlDict
 
-    def _getXmlText(self, path, host, port):
+    def _getFileXmlText(self, fileName):
+        f=open(fileName, 'r')
+        xmlText=f.read()
+        return xmlText.encode()
+
+    def _getHttpXmlText(self, path, host, port):
         httpRes = self._getHttp(path, host, port)
         self.log.debug("status %s", httpRes.status)
         try:
@@ -174,53 +205,5 @@ class ShoeCfgXmlHttpSendErr(Exception):
     pass
 class ShoeCfgXmlHttpRtnErr(Exception):
     pass
-
-###############################Unittests#################################
-from test_shoe import *
-from pprint import pprint
-class TestShoeCfgXml(TestShoeHttp):
-    def setUp(self):
-        super().setUp()
-        self.cmndList=None
-        self.cmndArgCfg=None
-        self.reply=None
-        self.host='127.0.0.1'
-
-        self.testObjs=[
-                self.testRootDev,
-                self.testActSvc,
-                self.testGroupCtrlSvc,
-                self.testZoneCtrlSvc]
-        return
-
-    def _sendTestMsgs(self):
-        shoeCfg=ShoeCfgXml(self.host, self.testFile, loglvl=logging.DEBUG)
-        self.xmlDict=shoeCfg.getCfg()
-        return
-
-class TestShoeCfgXmlDict(TestShoeCfgXml):
-    def runTest(self):
-        for testObj in self.testObjs:
-            print("Testing: ", testObj.name)
-            self._testXml(testObj)
-        return
-
-    def _testXml(self, testObj):
-        self.testFile=testObj.fileName
-        self.getRtn=testObj.xmlStr
-
-        self.httpTest()
-
-        errMsg = "Shoe cfg: dict not correct: %s." % \
-                    testObj.fileName
-
-        print("Return")
-        pprint(self.xmlDict)
-        print("Expected")
-        pprint(testObj.xmlDict)
-
-        self.assertDictEqual(self.xmlDict,
-                        testObj.xmlDict,
-                        errMsg)
-
-        return
+class ShoeCfgXmlErr(Exception):
+    pass

@@ -24,10 +24,10 @@
 #
 ############################################################################
 from console_log import *
-from shoeRoot import *
+from .shoeRoot import *
+from .shoeMsg import *
 from collections.abc import Iterable
 from collections import OrderedDict
-from shoeMsg import *
 
 class ShoeOp():
     CURRSTATE_CMND='GetCurrentState'
@@ -125,6 +125,10 @@ class ShoeOp():
                     cmndRtnStr += self._fmtOp(cmndRtn.args)
 
                 except ShoeMsgHttpRtnStatusErr as e:
+                    self.log.debug("HTTP Return Error Code %s, \
+                            cmnd %s: svcName %s, devName %s, \
+                            host %s: \n" % \
+                            (str(e), cmnd, svcName, devName, shoeRoot.host))
                     cmndRtnStr += "HTTP Return Error Code %s\n" % (str(e))
 
                 self.log.debug("Cmnd Return String:\n%s" % cmndRtnStr)
@@ -143,10 +147,20 @@ class ShoeOp():
             showDevs=ShoeRoot.PREFERRED_DEVS
 
         if showDevs is None:
-            showTree=cmndTree
+            devCmndTree=cmndTree
         else:
             self.log.debug(showDevs)
-            showTree=OrderedDict([(devName, cmndTree[devName]) for devName in showDevs])
+            devCmndTree=OrderedDict([(devName, cmndTree[devName]) for devName in showDevs])
+
+        for devName, svcCmndTree in devCmndTree.items():
+            devLbl="Device: %s" % devName
+            svcShowTree={}
+
+            for svcName, cmndList in svcCmndTree.items():
+                svcLbl="Service: %s" % svcName
+                svcShowTree[svcLbl]=cmndList
+
+            showTree[devLbl]=svcShowTree
 
         self.log.debug("ShowTree %s", showTree)
 
@@ -233,91 +247,3 @@ class ShoeOp():
             raise
 
         return fmtStr
-
-##############################UNIT TESTS########################################
-from test_shoe import *
-
-class TestShoeOp(TestShoeHttp):
-
-    def setUp(self):
-        super().setUp()
-        self.port=60006
-        self.host='127.0.0.1'
-        self.svcName=None
-        self.shoeRoot=ShoeRoot(self.host, loglvl=logging.DEBUG)
-        self.op=ShoeOp(self.shoeRoot, loglvl=logging.DEBUG)
-        self.cfg=False
-        self.testCbFunc=self._setUp
-        self.httpTest()
-        self.testCbFunc=self._sendTestMsgs
-        return
-
-    def _setUp(self):
-        self.shoeRoot.setUp()
-        return
-
-    def _sendTestMsgs(self):
-        return
-
-class TestShoeOpTree(TestShoeOp):
-    def runTest(self):
-        fmtCmndTree=self.op.showCmndTree()
-        self.assertEqual(fmtCmndTree, self.testRootDev.fmtCmndTreeDflt)
-        return
-
-class TestShoeOpTreeAll(TestShoeOp):
-    def runTest(self):
-        fmtCmndTree=self.op.showCmndTree(showAll=True)
-        self.assertEqual(fmtCmndTree, self.testRootDev.fmtCmndTreeAll)
-        return
-
-class TestShoeOpCmndInfo(TestShoeOp):
-    def runTest(self):
-        for cmndName,cmnd in self.testActSvc.cmnds.items():
-            fmtCmndInfo=self.op.showCmndInfo(cmndName, cmnd.svcName, cmnd.devName)
-            print("Expected %s" % cmnd.fmtCmndInfo)
-            print("Recieved %s" % fmtCmndInfo)
-            self.assertEqual(fmtCmndInfo, cmnd.fmtCmndInfo)
-        return
-
-class TestShoeOpGetInfo(TestShoeOp):
-    def setUp(self):
-        super().setUp()
-        return
-
-    def runTest(self):
-        self.maxDiff=None
-        rootDev=TestRootDev()
-        self.infoFmt=self.op.getInfo()
-        print(self.infoFmt)
-        self.assertEqual(self.infoFmt, rootDev.infoFmt)
-        return
-
-class TestShoeOpRunCmnd(TestShoeOp):
-    def setUp(self):
-        super().setUp()
-        self.testSvcs=[ self.testActSvc,
-                    self.testGroupCtrlSvc,
-                    self.testZoneCtrlSvc]
-        return
-
-    def _sendTestMsgs(self):
-        cmnd=self.cmnd
-        self.fmtCmndRtn=self.op.runCmnd(cmnd.name, cmnd.args, cmnd.svcName, cmnd.devName)
-        return
-
-    def runTest(self):
-        self.maxDiff=None
-        for testSvc in self.testSvcs:
-            for cmndName, cmnd in testSvc.cmnds.items():
-                self.cmnd = cmnd
-                self.httpTest(cmnd)
-
-                print("Expected*********************")
-                print(cmnd.fmtCmndRtn)
-
-                print("Current state format******************")
-                print(self.fmtCmndRtn)
-
-                self.assertEqual(self.fmtCmndRtn, cmnd.fmtCmndRtn)
-        return

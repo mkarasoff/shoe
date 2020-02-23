@@ -23,7 +23,7 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ############################################################################
-from shoeCfgXml import *
+from .shoeCfgXml import *
 from collections import OrderedDict
 
 class ShoeEventParser(ShoeCfgXml):
@@ -36,11 +36,12 @@ class ShoeEventParser(ShoeCfgXml):
         return
 
     def parse(self):
+        self.log.debug("XmlText %s" % self.xmlText)
         try:
-            self.xmlText=self.xmlText.encode('utf-8')
+            self.xmlText=self.xmlText.encode()
         except AttributeError:
             if self.xmlText is None:
-                return {}
+                return ''
             else:
                 raise
         except:
@@ -112,35 +113,3 @@ class ShoeEventParser(ShoeCfgXml):
         xmlStr=xmlStr.replace(b'&quot;', b'"')
         xmlStr=xmlStr.replace(b'&amp;', b'&')
         return xmlStr
-
-from test_shoe import *
-import pprint
-class TestShoeEvent(unittest.TestCase):
-    def setUp(self):
-        self.testSvcs=[ TestActSvc(), TestGroupCtrlSvc(), TestZoneCtrlSvc()]
-        return
-
-    def runTest(self):
-        shoeCfg=ShoeCfgXml()
-
-        for svc in self.testSvcs:
-            cmnd = svc.cmnds['GetCurrentState']
-            rtnMsgBody = cmnd.rtnMsgBody
-            xmlTextRoot = shoeCfg._parseXml(rtnMsgBody.encode('utf-8'))
-            currStRtn=shoeCfg._etreeToDict(xmlTextRoot)
-
-            shoeSt=ShoeEventParser(
-                xmlText=currStRtn['CurrentState'],
-                loglvl=logging.DEBUG)
-
-            currSt=shoeSt.parse()
-
-            pp = pprint.PrettyPrinter(indent=2)
-            print(svc.name)
-            print("Returned")
-            pp.pprint(currSt)
-            print("Expected")
-            pp.pprint(cmnd.rtn['CurrentState'])
-
-            self.assertDictEqual(cmnd.rtn['CurrentState'], currSt)
-        return

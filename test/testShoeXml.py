@@ -28,7 +28,7 @@ from hashlib import md5
 from collections import OrderedDict
 
 class TestShoeXml(object):
-    def __init__(self, xmlFile, md5hex=None, testPath='test_shoe/xml_files/'):
+    def __init__(self, xmlFile, md5hex=None, testPath='./test/xml_files/'):
         self.testPath=testPath
         self.xmlFile=xmlFile
 
