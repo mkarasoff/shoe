@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="shoe-mkaraosff", # Replace with your own username
-    version="0.0.1",
+    name="shoe", # Replace with your own username
+    version="0.1.0",
     author="Michael Karasoff",
     author_email="mike@karatronics.com",
     description="Configuration and control for HEOS speakers",
@@ -15,7 +15,8 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: GPL3",
+        "Natural Language :: English",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.7',
