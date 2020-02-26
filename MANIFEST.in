@@ -1,2 +1,1 @@
-include shoe
-recursive-include shoe *
+include shoe/shoe

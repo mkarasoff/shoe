@@ -5,7 +5,10 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="shoe", # Replace with your own username
-    version="0.1.0",
+    package_data = {
+                    'bin' : ['shoe']
+                },
+    version="0.1.4",
     author="Michael Karasoff",
     author_email="mike@karatronics.com",
     description="Configuration and control for HEOS speakers",
@@ -13,6 +16,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/mkarasoff/shoe",
     packages=setuptools.find_packages(),
+    scripts=['bin/shoe'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Natural Language :: English",
