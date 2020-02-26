@@ -388,6 +388,11 @@ The following features are implemented:
 - Binding devices into a "Zone" for multichannel speaker operation
 - Selecting channels.
 
+## v(0.1.7) ##
+
+Fixed some issues with alternate xml url.  Added versioning option.  Better response if no host is
+given.
+
 # Future Possibilities #
 
 Possible future features:

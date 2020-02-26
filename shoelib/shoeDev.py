@@ -34,8 +34,14 @@ class ShoeDev(ShoeSvc):
 
     UUID_KEY='UDN'
 
-    def __init__(self, cfg=None, path=None, fileName=None, loglvl=ConsoleLog.WARNING, host=None,
-            port=60006, force=False):
+    def __init__(self,
+                cfg=None,
+                path=None,
+                fileName=None,
+                loglvl=ConsoleLog.WARNING,
+                host=None,
+                port=60006,
+                force=False):
 
         super().__init__(host=host,
                         port=port,
@@ -44,6 +50,8 @@ class ShoeDev(ShoeSvc):
                         fileName=fileName,
                         path=path,
                         force=force)
+
+        self.log.debug("Path %s SelfPath %s", path, self.path)
 
         self.name=None
         self._svcs=None

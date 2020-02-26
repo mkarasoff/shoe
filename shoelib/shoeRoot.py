@@ -54,6 +54,8 @@ class ShoeRoot(ShoeDev):
                         port=port,
                         force=force)
 
+        self.log.debug("Path %s", self.path)
+
         self.name="root"
         self._devs=None
         self._aiosCfg=aiosCfg
@@ -63,7 +65,7 @@ class ShoeRoot(ShoeDev):
 
     def setUp(self):
         if self._aiosCfg is None:
-            self._aiosCfg=self.getCfg(path=self.AIOS_CFG_PATH)
+            self._aiosCfg=self.getCfg(path=self.path)
 
         self.cfg=self._getRootDevCfg(self._aiosCfg)
         self.log.debug2("Root Cfg: %s" % self.cfg)

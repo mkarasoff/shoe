@@ -28,6 +28,7 @@ from .shoeRoot import *
 from .shoeMsg import *
 from collections.abc import Iterable
 from collections import OrderedDict
+from .shoeVer import SHOE_VERSION
 
 class ShoeOp():
     CURRSTATE_CMND='GetCurrentState'
@@ -200,6 +201,9 @@ class ShoeOp():
                 self.log.debug2("Command Info:\n %s" % fmtParams)
 
         return cmndInfoStr
+
+    def getVersion(self):
+        return SHOE_VERSION
 
     def _fmtOp(self, opData, tab=0):
         fmt= '{0:>%s}{1:%s} : {2:<0}\n'%(tab, self.FMT_LBL_LEN)

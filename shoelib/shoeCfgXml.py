@@ -35,7 +35,7 @@ from console_log import *
 class ShoeCfgXml():
     def __init__(self,
                     host=None,
-                    path='',
+                    path=None,
                     loglvl=ConsoleLog.WARNING,
                     port=60006,
                     fileName=None):
@@ -74,6 +74,8 @@ class ShoeCfgXml():
         else:
             self.xmlText = self._getFileXmlText(self.fileName)
 
+        self.log.debug2("XML Test %s" % str(self.xmlText))
+
         self.xmlDict = self._getXmlDict(self.xmlText)
 
         self.log.debug("XML Dict %s" % str(self.xmlDict))
@@ -102,6 +104,7 @@ class ShoeCfgXml():
     def _getHttpXmlText(self, path, host, port):
         httpRes = self._getHttp(path, host, port)
         self.log.debug("status %s", httpRes.status)
+        self.log.debug("headers %s", httpRes.headers)
         try:
             status = int(httpRes.status)
         except:
@@ -114,6 +117,8 @@ class ShoeCfgXml():
                 raise
         else:
             raise ShoeCfgXmlHttpRtnErr(str(status))
+
+        self.log.debug2("HTTP Text %s", xmlText)
 
         return xmlText
 
@@ -178,6 +183,7 @@ class ShoeCfgXml():
         else:
             conn.set_debuglevel(0)
 
+        self.log.debug("path %s" % path)
         conn.putrequest('GET', path, skip_host=True, skip_accept_encoding=True)
 
         host="%s:%s" % (host, port)
@@ -189,7 +195,6 @@ class ShoeCfgXml():
         except Exception as e:
             raise ShoeCfgXmlHttpSendErr(str(e))
 
-        self.log.debug("Host %s" % host)
         try:
             httpRes = conn.getresponse()
         except Exception as e:
@@ -197,6 +202,8 @@ class ShoeCfgXml():
             raise ShoeCfgXmlHttpRtnErr(str(e))
 
         conn.close()
+
+        self.log.debug("Host %s" % host)
 
         return httpRes
 

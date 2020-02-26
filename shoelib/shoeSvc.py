@@ -62,6 +62,8 @@ class ShoeSvc(ShoeCfgXml):
                         path=path,
                         fileName=fileName)
 
+        self.log.debug("Path %s SelfPath %s", path, self.path)
+
         self.cfg=cfg
         self._devInst=devInst
 
@@ -71,7 +73,6 @@ class ShoeSvc(ShoeCfgXml):
         self._stateVarTbl=None
         self._cmndTbl=None
 
-        self.path=None
         self.urn=None
 
         self.force=force

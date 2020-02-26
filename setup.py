@@ -1,14 +1,25 @@
 import setuptools
 
+SETUP_VERSION="0.1.7"
+
+SHOE_VERSION_FILE="shoelib/shoeVer.py"
+SHOE_VERSION_VAR="SHOE_VERSION"
+
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+with open(SHOE_VERSION_FILE, "r") as fh:
+    lines=fh.readlines()
+
+with open(SHOE_VERSION_FILE, "w") as fh:
+    for line in lines:
+        if line[:len(SHOE_VERSION_VAR)] == SHOE_VERSION_VAR:
+            line="%s=\"%s\"" % (SHOE_VERSION_VAR, SETUP_VERSION)
+        fh.write(line)
+
 setuptools.setup(
     name="shoe", # Replace with your own username
-    package_data = {
-                    'bin' : ['shoe']
-                },
-    version="0.1.4",
+    version=SETUP_VERSION,
     author="Michael Karasoff",
     author_email="mike@karatronics.com",
     description="Configuration and control for HEOS speakers",
@@ -16,7 +27,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/mkarasoff/shoe",
     packages=setuptools.find_packages(),
-    scripts=['bin/shoe'],
+    scripts=['shoe'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Natural Language :: English",
