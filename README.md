@@ -389,9 +389,10 @@ The following features are implemented:
 - Selecting channels.
 
 ## v(0.1.7) ##
-
-Fixed some issues with alternate xml url.  Added versioning option.  Better response if no host is
-given.
+Fixed some issues with alternate xml url (-x option).
+Added versioning option.
+Better response if no host is given.
+Fixed bug with shoeBond.
 
 # Future Possibilities #
 
