@@ -1,0 +1,4 @@
+This is the shoe library.  Other programs can use this to do shoe things.  The best hooks are in shoeOp.py, shoeBond.py, and shoeRoot.py
+
+To run all this unit tests for the library, from this directory run:
+python3 -m unittest discover -p 'ut*'
