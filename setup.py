@@ -1,6 +1,12 @@
+#To create a distribution package:
+#$ python3 setup.py sdist bdist_wheel
+#
+#To upload for pip:
+#$ python3 -m twine upload dist/*
+
 import setuptools
 
-SETUP_VERSION="0.1.7"
+SETUP_VERSION="0.1.8"
 
 SHOE_VERSION_FILE="shoelib/shoeVer.py"
 SHOE_VERSION_VAR="SHOE_VERSION"
@@ -34,5 +40,5 @@ setuptools.setup(
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.7',
+    python_requires='>=3.6',
 )

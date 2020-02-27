@@ -370,9 +370,7 @@ Other version of hardware and firmware may work with SHOE.  SHOE requires a root
 This is the location of the root XML file for the HEOS 1 speaker, version 1.520.200.  Other devices may have a different location.  The `shoe` program allows one to specify URL or a file on the command line.
 
 ## Security considerations ##
-Just like the HEOS app, all communication between SHOE and Denon HEOS speakers is plaintext, without password protection.  From a practical perspective, any sensitive information stored on you speakers, including your WIFI password, may be be gathered through trivial methods.  Anyone with network access to your speaker, either via WIFI, or physical access to the Ethernet port, can access and control you speakers with SHOE.  Consider this when setting up your speakers on your network.  You may need to isolate your speakers
-
-Please consider this when setting up your speakers.
+Just like the HEOS app, all communication between SHOE and Denon HEOS speakers is plaintext, without password protection.  From a practical perspective, any sensitive information stored on you speakers, including your WIFI password, may be be gathered through trivial methods.  Anyone with network access to your speaker, either via WIFI, or physical access to the Ethernet port, can access and control you speakers with SHOE.  Consider this when setting up your speakers on your network.
 
 # Version Release Notes #
 
@@ -393,6 +391,10 @@ Fixed some issues with alternate xml url (-x option).
 Added versioning option.
 Better response if no host is given.
 Fixed bug with shoeBond.
+
+## v(0.1.8) ##
+Set python minimum version for PIP install to >=3.6
+Some minor fixes to README.md
 
 # Future Possibilities #
 
