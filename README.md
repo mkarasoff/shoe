@@ -189,6 +189,7 @@ SHOE will show the device command tree with the `-t` option:
     shoe -H <Speaker IP> -t[t]
 
 This would return a list of commands:
+
     $ shoe -H <Speaker IP> -tt
 
     Device: ACT-Denon :
