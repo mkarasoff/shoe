@@ -186,9 +186,10 @@ These commands are broken down into a hierarchy of "devices" and "services" that
 
 SHOE will show the device command tree with the `-t` option:
 
-    shoe -H <IP address> -t[t]
+    shoe -H <Speaker IP> -t[t]
 
 This would return a list of commands:
+    $ shoe -H <Speaker IP> -tt
 
     Device: ACT-Denon :
         Service: ACT     :
@@ -318,6 +319,82 @@ This would return a list of commands:
                                SetGroupTreble
                                SetGroupVolume
         ----------------
+        ----------------
+    Device: MediaRenderer :
+        Service: AVTransport :
+        ----------------
+                               GetCurrentState
+                               GetCurrentTransportActions
+                               GetDeviceCapabilities
+                               GetMediaInfo
+                               GetMediaInfo_Ext
+                               GetPositionInfo
+                               GetTransportInfo
+                               GetTransportSettings
+                               Next
+                               Pause
+                               Play
+                               Previous
+                               Seek
+                               SetAVTransportURI
+                               SetNextAVTransportURI
+                               SetPlayMode
+                               Stop
+                               X_SetShuffle
+        ----------------
+        Service: ConnectionManager :
+        ----------------
+                               ConnectionComplete
+                               GetCurrentConnectionIDs
+                               GetCurrentConnectionInfo
+                               GetCurrentState
+                               GetProtocolInfo
+                               PrepareForConnection
+        ----------------
+        Service: RenderingControl :
+        ----------------
+                               GetCurrentState
+                               GetMute
+                               GetVolume
+                               GetVolumeDB
+                               ListPresets
+                               SelectPreset
+                               SetMute
+                               SetVolume
+                               SetVolumeDB
+                               X_GetBalance
+                               X_GetBass
+                               X_GetPreset
+                               X_GetSubwoofer
+                               X_GetTreble
+                               X_SetBalance
+                               X_SetBass
+                               X_SetMute
+                               X_SetSubwoofer
+                               X_SetTreble
+                               X_SetVolume
+        ----------------
+    Device: MediaServer :
+        Service: ContentDirectory :
+        ----------------
+                               Browse
+                               GetSearchCapabilities
+                               GetSortCapabilities
+                               GetSystemUpdateID
+                               Search
+                               X_HideItem
+                               X_RenameItem
+                               X_SetItemInputLevel
+        ----------------
+        Service: ConnectionManager :
+        ----------------
+                               ConnectionComplete
+                               GetCurrentConnectionIDs
+                               GetCurrentConnectionInfo
+                               GetCurrentState
+                               GetProtocolInfo
+                               PrepareForConnection
+        ----------------
 
 Argument for any of these commands can be found:
 
@@ -387,14 +464,15 @@ The following features are implemented:
 - Selecting channels.
 
 ## v(0.1.7) ##
-Fixed some issues with alternate xml url (-x option).
-Added versioning option.
-Better response if no host is given.
-Fixed bug with shoeBond.
+- Fixed some issues with alternate xml url (-x option).
+- Added versioning option.
+- Better response if no host is given.
+- Fixed bug with shoeBond.
 
-## v(0.1.8) ##
-Set python minimum version for PIP install to >=3.6
-Some minor fixes to README.md
+## v(0.1.9) ##
+- Set python minimum version for PIP install to >=3.6
+- Added extended commands to README.md
+- Type fixes to README.md
 
 # Future Possibilities #
 

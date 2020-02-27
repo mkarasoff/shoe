@@ -6,7 +6,7 @@
 
 import setuptools
 
-SETUP_VERSION="0.1.8"
+SETUP_VERSION="0.1.9"
 
 SHOE_VERSION_FILE="shoelib/shoeVer.py"
 SHOE_VERSION_VAR="SHOE_VERSION"
