@@ -473,7 +473,7 @@ The following features are implemented:
 ## v(0.1.9) ##
 - Set python minimum version for PIP install to >=3.6
 - Added extended commands to README.md
-- Type fixes to README.md
+- Typo fixes to README.md
 
 # Future Possibilities #
 
